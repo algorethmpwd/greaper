@@ -23,7 +23,7 @@ It includes options for checking status codes, scanning for vulnerabilities, che
 - Install required Python packages from `requirements.txt`.
 
 ## Installation
-1. Clone the repository or download `greaper.py` and `requirements.txt`.
+1. Clone the repository with git clone https://github.com/algorethmpwd/greaper.git or download `greaper.py` and `requirements.txt`.
 2. Install the dependencies listed in `requirements.txt`:
    ```bash
    pip install -r requirements.txt
