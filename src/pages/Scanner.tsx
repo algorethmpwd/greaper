@@ -4,6 +4,7 @@ import { Play, Upload, Settings, Shield, Clock, FileText, Zap } from 'lucide-rea
 import toast from 'react-hot-toast'
 import AdvancedScanOptions from '../components/AdvancedScanOptions'
 import PayloadManager from '../components/PayloadManager'
+import RealTimeScanProgress from '../components/RealTimeScanProgress'
 import { ScanConfig } from '../types/scanner'
 
 const Scanner: React.FC = () => {
@@ -11,13 +12,13 @@ const Scanner: React.FC = () => {
   const [urlList, setUrlList] = useState<string[]>([])
   const [scanMode, setScanMode] = useState<'single' | 'bulk'>('single')
   const [isScanning, setIsScanning] = useState(false)
-  const [scanProgress, setScanProgress] = useState(0)
   const [activeTab, setActiveTab] = useState<'scanner' | 'payloads'>('scanner')
   const [scanConfig, setScanConfig] = useState<ScanConfig>({
     // Basic Scans
     statusCodes: true,
     directoryFuzzing: false,
     subdomainEnum: false,
+    contentDiscovery: false,
     
     // Vulnerability Scans
     sqlInjection: false,
@@ -26,12 +27,16 @@ const Scanner: React.FC = () => {
     rfiScanning: false,
     xxeScanning: false,
     ssrfScanning: false,
+    commandInjection: false,
+    ldapInjection: false,
     
     // Security Checks
     corsCheck: true,
     hostHeaderInjection: false,
     securityHeaders: true,
     tlsConfiguration: false,
+    httpMethodTesting: false,
+    clickjackingTest: false,
     
     // Information Gathering
     ipLookup: false,
@@ -39,6 +44,8 @@ const Scanner: React.FC = () => {
     jsFileScanning: false,
     robotsTxtCheck: false,
     sitemapCheck: false,
+    metadataExtraction: false,
+    dnsEnumeration: false,
     
     // Advanced Scans
     cveScanning: false,
@@ -46,11 +53,17 @@ const Scanner: React.FC = () => {
     technologyDetection: false,
     emailHarvesting: false,
     socialMediaLinks: false,
+    fuzzing: false,
+    apiTesting: false,
+    authenticationTesting: false,
+    businessLogicTesting: false,
     
     // Performance & Monitoring
     responseTimeAnalysis: false,
     loadTesting: false,
     uptimeMonitoring: false,
+    resourceAnalysis: false,
+    cacheAnalysis: false,
   })
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,34 +97,19 @@ const Scanner: React.FC = () => {
     }
 
     setIsScanning(true)
-    setScanProgress(0)
+    toast.success('Real-time security scan initiated!')
+  }
 
-    // Simulate scanning progress with more realistic timing
-    const totalSteps = selectedScans.length * (scanMode === 'single' ? 1 : urlList.length)
-    let currentStep = 0
-
-    const progressInterval = setInterval(() => {
-      currentStep++
-      setScanProgress((currentStep / totalSteps) * 100)
-      
-      if (currentStep >= totalSteps) {
-        clearInterval(progressInterval)
-        setIsScanning(false)
-        setScanProgress(100)
-        toast.success('Comprehensive scan completed successfully!')
-        
-        // Reset progress after a delay
-        setTimeout(() => setScanProgress(0), 3000)
-      }
-    }, 800) // Slower progress for more realistic feel
-
-    toast.success('Advanced security scan initiated!')
+  const handleScanComplete = (results: any) => {
+    setIsScanning(false)
+    toast.success(`Scan completed! Found ${results.metrics.vulnerabilitiesFound} vulnerabilities`)
+    // Handle scan results here
   }
 
   const getEstimatedTime = () => {
     const selectedCount = Object.values(scanConfig).filter(Boolean).length
     const targetCount = scanMode === 'single' ? 1 : urlList.length
-    const baseTime = selectedCount * targetCount * 3 // 3 seconds per scan type per target
+    const baseTime = selectedCount * targetCount * 3
     
     if (baseTime < 60) return `${baseTime} sec`
     if (baseTime < 3600) return `${Math.ceil(baseTime / 60)} min`
@@ -127,20 +125,20 @@ const Scanner: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Advanced Security Scanner</h1>
-        <p className="text-gray-600 mt-1">Comprehensive security testing with enhanced capabilities</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Advanced Security Scanner</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Real-time comprehensive security testing with enhanced capabilities</p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-fit">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as 'scanner' | 'payloads')}
             className={`flex items-center space-x-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
             <tab.icon className="w-4 h-4" />
@@ -153,94 +151,104 @@ const Scanner: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Scan Configuration */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Target Configuration */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="card"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Target Configuration</h3>
-              
-              {/* Scan Mode Toggle */}
-              <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
-                <button
-                  onClick={() => setScanMode('single')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                    scanMode === 'single'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Single URL
-                </button>
-                <button
-                  onClick={() => setScanMode('bulk')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                    scanMode === 'bulk'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Bulk URLs
-                </button>
-              </div>
-
-              {scanMode === 'single' ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Target URL
-                  </label>
-                  <input
-                    type="url"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://example.com"
-                    className="input-field"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Upload URL List
-                  </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">
-                      Drop your file here or click to browse
-                    </p>
-                    <input
-                      type="file"
-                      accept=".txt"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <label htmlFor="file-upload" className="btn-secondary cursor-pointer">
-                      Choose File
-                    </label>
-                    {urlList.length > 0 && (
-                      <p className="text-sm text-success-600 mt-2">
-                        {urlList.length} URLs loaded
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </motion.div>
-
-            {/* Advanced Scan Options */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="card"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Scan Configuration</h3>
-              <AdvancedScanOptions 
+            {isScanning ? (
+              <RealTimeScanProgress
+                isScanning={isScanning}
                 scanConfig={scanConfig}
-                onConfigChange={setScanConfig}
+                onScanComplete={handleScanComplete}
               />
-            </motion.div>
+            ) : (
+              <>
+                {/* Target Configuration */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="card"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Target Configuration</h3>
+                  
+                  {/* Scan Mode Toggle */}
+                  <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                    <button
+                      onClick={() => setScanMode('single')}
+                      className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                        scanMode === 'single'
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Single URL
+                    </button>
+                    <button
+                      onClick={() => setScanMode('bulk')}
+                      className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                        scanMode === 'bulk'
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Bulk URLs
+                    </button>
+                  </div>
+
+                  {scanMode === 'single' ? (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Target URL
+                      </label>
+                      <input
+                        type="url"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        placeholder="https://example.com"
+                        className="input-field"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Upload URL List
+                      </label>
+                      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                          Drop your file here or click to browse
+                        </p>
+                        <input
+                          type="file"
+                          accept=".txt"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          id="file-upload"
+                        />
+                        <label htmlFor="file-upload" className="btn-secondary cursor-pointer">
+                          Choose File
+                        </label>
+                        {urlList.length > 0 && (
+                          <p className="text-sm text-success-600 dark:text-success-400 mt-2">
+                            {urlList.length} URLs loaded
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+
+                {/* Advanced Scan Options */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="card"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Scan Configuration</h3>
+                  <AdvancedScanOptions 
+                    scanConfig={scanConfig}
+                    onConfigChange={setScanConfig}
+                  />
+                </motion.div>
+              </>
+            )}
           </div>
 
           {/* Enhanced Control Panel */}
@@ -251,49 +259,26 @@ const Scanner: React.FC = () => {
               transition={{ delay: 0.2 }}
               className="card"
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Scan Control</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Scan Control</h3>
               
-              {isScanning ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center">
-                    <div className="loading-dots">
-                      <div></div>
-                      <div></div>
-                      <div></div>
-                      <div></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm text-gray-600 mb-2">
-                      <span>Advanced scanning in progress...</span>
-                      <span>{Math.round(scanProgress)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${scanProgress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
+              {!isScanning && (
                 <button
                   onClick={handleScan}
                   className="btn-primary w-full flex items-center justify-center space-x-2"
                 >
                   <Zap className="w-4 h-4" />
-                  <span>Start Advanced Scan</span>
+                  <span>Start Real-time Scan</span>
                 </button>
               )}
 
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h4 className="font-medium text-gray-900 mb-3">Quick Actions</h4>
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <h4 className="font-medium text-gray-900 dark:text-white mb-3">Quick Actions</h4>
                 <div className="space-y-2">
-                  <button className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                  <button className="w-full text-left px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
                     <Settings className="w-4 h-4 inline mr-2" />
                     Advanced Settings
                   </button>
-                  <button className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                  <button className="w-full text-left px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
                     <Clock className="w-4 h-4 inline mr-2" />
                     Schedule Scan
                   </button>
@@ -308,37 +293,37 @@ const Scanner: React.FC = () => {
               transition={{ delay: 0.3 }}
               className="card"
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Scan Summary</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Scan Summary</h3>
               
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Target(s):</span>
-                  <span className="font-medium">
+                  <span className="text-gray-600 dark:text-gray-400">Target(s):</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
                     {scanMode === 'single' ? (url || 'Not set') : `${urlList.length} URLs`}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Selected scans:</span>
-                  <span className="font-medium">
+                  <span className="text-gray-600 dark:text-gray-400">Selected scans:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
                     {Object.values(scanConfig).filter(Boolean).length}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Estimated time:</span>
-                  <span className="font-medium">{getEstimatedTime()}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Estimated time:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{getEstimatedTime()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Scan depth:</span>
-                  <span className="font-medium">
-                    {Object.values(scanConfig).filter(Boolean).length > 10 ? 'Deep' : 
-                     Object.values(scanConfig).filter(Boolean).length > 5 ? 'Medium' : 'Basic'}
+                  <span className="text-gray-600 dark:text-gray-400">Scan depth:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {Object.values(scanConfig).filter(Boolean).length > 15 ? 'Deep' : 
+                     Object.values(scanConfig).filter(Boolean).length > 8 ? 'Medium' : 'Basic'}
                   </span>
                 </div>
               </div>
 
               {/* Scan Type Breakdown */}
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Active Scan Types</h4>
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Active Scan Types</h4>
                 <div className="flex flex-wrap gap-1">
                   {Object.entries(scanConfig)
                     .filter(([_, enabled]) => enabled)

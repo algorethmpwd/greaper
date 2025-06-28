@@ -3,6 +3,7 @@ export interface ScanConfig {
   statusCodes: boolean
   directoryFuzzing: boolean
   subdomainEnum: boolean
+  contentDiscovery: boolean
   
   // Vulnerability Scans
   sqlInjection: boolean
@@ -11,12 +12,16 @@ export interface ScanConfig {
   rfiScanning: boolean
   xxeScanning: boolean
   ssrfScanning: boolean
+  commandInjection: boolean
+  ldapInjection: boolean
   
   // Security Checks
   corsCheck: boolean
   hostHeaderInjection: boolean
   securityHeaders: boolean
   tlsConfiguration: boolean
+  httpMethodTesting: boolean
+  clickjackingTest: boolean
   
   // Information Gathering
   ipLookup: boolean
@@ -24,6 +29,8 @@ export interface ScanConfig {
   jsFileScanning: boolean
   robotsTxtCheck: boolean
   sitemapCheck: boolean
+  metadataExtraction: boolean
+  dnsEnumeration: boolean
   
   // Advanced Scans
   cveScanning: boolean
@@ -31,11 +38,17 @@ export interface ScanConfig {
   technologyDetection: boolean
   emailHarvesting: boolean
   socialMediaLinks: boolean
+  fuzzing: boolean
+  apiTesting: boolean
+  authenticationTesting: boolean
+  businessLogicTesting: boolean
   
   // Performance & Monitoring
   responseTimeAnalysis: boolean
   loadTesting: boolean
   uptimeMonitoring: boolean
+  resourceAnalysis: boolean
+  cacheAnalysis: boolean
 }
 
 export interface ScanResult {
