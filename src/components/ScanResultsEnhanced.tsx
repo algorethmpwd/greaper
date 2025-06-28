@@ -6,6 +6,7 @@ import {
   Shield, Bug, Lock, Globe, Code, Server
 } from 'lucide-react'
 import { Finding, ScanResult } from '../types/scanner'
+import { exportScanResults } from '../utils/exportUtils'
 import toast from 'react-hot-toast'
 
 interface ScanResultsEnhancedProps {
@@ -62,23 +63,13 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
     toast.success('Copied to clipboard')
   }
 
-  const exportFindings = () => {
-    const exportData = {
-      url: result.url,
-      timestamp: result.timestamp,
-      findings: result.findings,
-      metadata: result.metadata
+  const exportFindings = (format: 'json' | 'csv' = 'json') => {
+    const success = exportScanResults(result, format)
+    if (success) {
+      toast.success(`Scan results exported as ${format.toUpperCase()}`)
+    } else {
+      toast.error('Failed to export scan results')
     }
-    
-    const dataStr = JSON.stringify(exportData, null, 2)
-    const dataBlob = new Blob([dataStr], { type: 'application/json' })
-    const url = URL.createObjectURL(dataBlob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `security_scan_${new Date().toISOString().split('T')[0]}.json`
-    link.click()
-    URL.revokeObjectURL(url)
-    toast.success('Scan results exported')
   }
 
   return (
@@ -91,11 +82,18 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
         </div>
         <div className="flex space-x-2">
           <button
-            onClick={exportFindings}
+            onClick={() => exportFindings('json')}
             className="btn-secondary flex items-center space-x-2"
           >
             <Download className="w-4 h-4" />
-            <span>Export</span>
+            <span>Export JSON</span>
+          </button>
+          <button
+            onClick={() => exportFindings('csv')}
+            className="btn-secondary flex items-center space-x-2"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export CSV</span>
           </button>
           <a
             href={result.url}

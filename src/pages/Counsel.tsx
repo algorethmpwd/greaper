@@ -7,6 +7,7 @@ import {
   FileText, Terminal, Activity, Layers, Cpu, Wifi,
   Clock, CheckCircle, AlertCircle, Bookmark, Save
 } from 'lucide-react'
+import { exportCounselSession } from '../utils/exportUtils'
 import toast from 'react-hot-toast'
 import { useSessionManager } from '../hooks/useSessionManager'
 import SessionManager from '../components/SessionManager'
@@ -616,15 +617,12 @@ test.example.com`,
       config: sessionConfig
     }
     
-    const dataStr = JSON.stringify(sessionData, null, 2)
-    const dataBlob = new Blob([dataStr], { type: 'application/json' })
-    const url = URL.createObjectURL(dataBlob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `ai_counsel_session_${new Date().toISOString().split('T')[0]}.json`
-    link.click()
-    URL.revokeObjectURL(url)
-    toast.success('Session exported successfully')
+    const success = exportCounselSession(sessionData)
+    if (success) {
+      toast.success('Session exported successfully')
+    } else {
+      toast.error('Failed to export session')
+    }
   }
 
   const getAgentByMessage = (message: CounselMessage) => {

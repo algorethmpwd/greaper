@@ -4,6 +4,7 @@ import {
   Send, Bot, User, Copy, Download, Trash2, Settings,
   Brain, MessageCircle, Code, Shield, Bug, Zap
 } from 'lucide-react'
+import { exportAIChat } from '../utils/exportUtils'
 import toast from 'react-hot-toast'
 
 interface ChatMessage {
@@ -733,23 +734,12 @@ What specific security challenge would you like to tackle?`
   }
 
   const exportChat = () => {
-    const chatData = {
-      timestamp: new Date().toISOString(),
-      messages: messages,
-      settings: chatSettings,
-      provider: selectedProvider,
-      model: selectedModel
+    const success = exportAIChat(messages, chatSettings)
+    if (success) {
+      toast.success('Chat exported successfully')
+    } else {
+      toast.error('Failed to export chat')
     }
-    
-    const dataStr = JSON.stringify(chatData, null, 2)
-    const dataBlob = new Blob([dataStr], { type: 'application/json' })
-    const url = URL.createObjectURL(dataBlob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `ai_security_chat_${new Date().toISOString().split('T')[0]}.json`
-    link.click()
-    URL.revokeObjectURL(url)
-    toast.success('Chat exported successfully')
   }
 
   return (
