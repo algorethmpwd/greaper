@@ -4,7 +4,8 @@ import {
   Brain, Users, Play, Pause, Settings, Download, Upload,
   MessageCircle, Code, Shield, Bug, Target, Zap, Eye,
   Network, Server, Database, Lock, Globe, Search,
-  FileText, Terminal, Activity, Layers, Cpu, Wifi
+  FileText, Terminal, Activity, Layers, Cpu, Wifi,
+  Clock, CheckCircle, AlertCircle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -16,8 +17,10 @@ interface AIAgent {
   role: string
   expertise: string[]
   avatar: string
-  status: 'idle' | 'thinking' | 'analyzing' | 'exploiting'
+  status: 'idle' | 'thinking' | 'analyzing' | 'exploiting' | 'completed'
   lastMessage?: string
+  progress: number
+  currentTask?: string
 }
 
 interface MCPServer {
@@ -48,6 +51,7 @@ const Counsel: React.FC = () => {
   const [selectedAgents, setSelectedAgents] = useState<string[]>([])
   const [messages, setMessages] = useState<CounselMessage[]>([])
   const [mcpServers, setMcpServers] = useState<MCPServer[]>([])
+  const [agents, setAgents] = useState<AIAgent[]>([])
   const [sessionConfig, setSessionConfig] = useState({
     depth: 'comprehensive',
     focus: 'all_vulnerabilities',
@@ -58,6 +62,7 @@ const Counsel: React.FC = () => {
     aggressiveness: 'moderate'
   })
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   const availableAgents: AIAgent[] = [
     {
@@ -68,7 +73,8 @@ const Counsel: React.FC = () => {
       role: 'Reconnaissance Specialist',
       expertise: ['OSINT', 'Subdomain Enumeration', 'Asset Discovery', 'Technology Stack Analysis'],
       avatar: '🕵️',
-      status: 'idle'
+      status: 'idle',
+      progress: 0
     },
     {
       id: 'web-app-hunter',
@@ -78,7 +84,8 @@ const Counsel: React.FC = () => {
       role: 'Web Application Security Expert',
       expertise: ['SQL Injection', 'XSS', 'CSRF', 'Authentication Bypass', 'Business Logic Flaws'],
       avatar: '🎯',
-      status: 'idle'
+      status: 'idle',
+      progress: 0
     },
     {
       id: 'api-specialist',
@@ -88,7 +95,8 @@ const Counsel: React.FC = () => {
       role: 'API Security Specialist',
       expertise: ['REST API', 'GraphQL', 'API Authentication', 'Rate Limiting', 'IDOR'],
       avatar: '🔌',
-      status: 'idle'
+      status: 'idle',
+      progress: 0
     },
     {
       id: 'network-analyst',
@@ -98,7 +106,8 @@ const Counsel: React.FC = () => {
       role: 'Network Security Analyst',
       expertise: ['Port Scanning', 'Service Enumeration', 'Network Protocols', 'MITM Attacks'],
       avatar: '🌐',
-      status: 'idle'
+      status: 'idle',
+      progress: 0
     },
     {
       id: 'code-auditor',
@@ -108,7 +117,8 @@ const Counsel: React.FC = () => {
       role: 'Source Code Security Auditor',
       expertise: ['Static Analysis', 'Code Review', 'Vulnerability Patterns', 'Secure Coding'],
       avatar: '📝',
-      status: 'idle'
+      status: 'idle',
+      progress: 0
     },
     {
       id: 'exploit-dev',
@@ -118,7 +128,8 @@ const Counsel: React.FC = () => {
       role: 'Exploit Development Specialist',
       expertise: ['Payload Crafting', 'Exploit Chaining', 'Privilege Escalation', 'RCE'],
       avatar: '💥',
-      status: 'idle'
+      status: 'idle',
+      progress: 0
     },
     {
       id: 'mobile-specialist',
@@ -128,7 +139,8 @@ const Counsel: React.FC = () => {
       role: 'Mobile Application Security',
       expertise: ['Android Security', 'iOS Security', 'Mobile API', 'App Store Analysis'],
       avatar: '📱',
-      status: 'idle'
+      status: 'idle',
+      progress: 0
     },
     {
       id: 'cloud-expert',
@@ -138,7 +150,8 @@ const Counsel: React.FC = () => {
       role: 'Cloud Security Expert',
       expertise: ['AWS Security', 'Azure Security', 'GCP Security', 'Container Security'],
       avatar: '☁️',
-      status: 'idle'
+      status: 'idle',
+      progress: 0
     }
   ]
 
@@ -243,17 +256,17 @@ const Counsel: React.FC = () => {
 
   useEffect(() => {
     setMcpServers(defaultMCPServers)
+    setAgents(availableAgents)
     // Initialize MCP servers
     initializeMCPServers()
   }, [])
 
   useEffect(() => {
-    scrollToBottom()
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current
+      container.scrollTop = container.scrollHeight
+    }
   }, [messages])
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
 
   const initializeMCPServers = async () => {
     // Simulate MCP server initialization
@@ -281,6 +294,14 @@ const Counsel: React.FC = () => {
 
     setIsSessionActive(true)
     setMessages([])
+    
+    // Reset agent states
+    setAgents(prev => prev.map(agent => ({
+      ...agent,
+      status: selectedAgents.includes(agent.id) ? 'thinking' : 'idle',
+      progress: 0,
+      currentTask: selectedAgents.includes(agent.id) ? 'Initializing...' : undefined
+    })))
     
     // Initialize session
     const sessionMessage: CounselMessage = {
@@ -324,14 +345,33 @@ Let the hunt begin! 🎯`,
     
     activeAgents.forEach((agent, index) => {
       setTimeout(() => {
-        generateAgentMessage(agent)
-      }, index * 3000 + Math.random() * 2000)
+        updateAgentStatus(agent.id, 'analyzing', 'Starting reconnaissance...')
+        setTimeout(() => {
+          generateAgentMessage(agent)
+        }, 2000)
+      }, index * 1000)
     })
+  }
+
+  const updateAgentStatus = (agentId: string, status: AIAgent['status'], task?: string, progress?: number) => {
+    setAgents(prev => prev.map(agent => 
+      agent.id === agentId 
+        ? { 
+            ...agent, 
+            status, 
+            currentTask: task || agent.currentTask,
+            progress: progress !== undefined ? progress : agent.progress
+          }
+        : agent
+    ))
   }
 
   const generateAgentMessage = (agent: AIAgent) => {
     const messages = getAgentMessages(agent)
     const randomMessage = messages[Math.floor(Math.random() * messages.length)]
+    
+    // Update agent status to show they're working
+    updateAgentStatus(agent.id, 'exploiting', randomMessage.task, Math.random() * 100)
     
     const newMessage: CounselMessage = {
       id: Date.now().toString() + agent.id,
@@ -344,13 +384,23 @@ Let the hunt begin! 🎯`,
 
     setMessages(prev => [...prev, newMessage])
     
+    // Mark agent as completed for this task
+    setTimeout(() => {
+      updateAgentStatus(agent.id, 'completed', 'Task completed', 100)
+    }, 1000)
+    
     // Continue the conversation
     if (isSessionActive) {
       setTimeout(() => {
-        if (Math.random() > 0.3) { // 70% chance to continue
-          generateAgentMessage(agent)
+        if (Math.random() > 0.4) { // 60% chance to continue
+          updateAgentStatus(agent.id, 'thinking', 'Analyzing findings...')
+          setTimeout(() => {
+            generateAgentMessage(agent)
+          }, 3000)
+        } else {
+          updateAgentStatus(agent.id, 'idle', 'Waiting for new tasks...')
         }
-      }, 5000 + Math.random() * 10000)
+      }, 8000 + Math.random() * 7000)
     }
   }
 
@@ -376,6 +426,7 @@ Let the hunt begin! 🎯`,
 - Certificate analysis for additional domains
 - Social media reconnaissance for employee information`,
           type: 'analysis' as const,
+          task: 'Subdomain enumeration',
           attachments: [{
             type: 'code' as const,
             content: `# Discovered Subdomains
@@ -404,7 +455,8 @@ test.example.com`,
 - Bug bounty program: Active (HackerOne)
 - Security headers: Partially implemented
 - Rate limiting: Present but potentially bypassable`,
-          type: 'analysis' as const
+          type: 'analysis' as const,
+          task: 'OSINT gathering'
         }
       ],
       'web-app-hunter': [
@@ -432,6 +484,7 @@ test.example.com`,
 2. Use stored XSS for persistence
 3. Leverage CSRF for privilege escalation`,
           type: 'vulnerability' as const,
+          task: 'Web app vulnerability scanning',
           attachments: [{
             type: 'payload' as const,
             content: `' UNION SELECT 1,2,3,username,password,6 FROM admin_users--`,
@@ -462,7 +515,8 @@ test.example.com`,
 1. Extract JWT secret via timing attack
 2. Forge admin JWT token
 3. Access sensitive API endpoints`,
-          type: 'vulnerability' as const
+          type: 'vulnerability' as const,
+          task: 'API security testing'
         }
       ],
       'network-analyst': [
@@ -492,6 +546,7 @@ test.example.com`,
 - Redis instance contains session data
 - Internal API calls use HTTP (not HTTPS)`,
           type: 'analysis' as const,
+          task: 'Network reconnaissance',
           attachments: [{
             type: 'network_trace' as const,
             content: `GET /api/internal/users HTTP/1.1
@@ -534,6 +589,7 @@ X-API-Key: sk_live_abc123def456...`,
 - Insufficient error handling
 - Debug mode enabled in production`,
           type: 'code_review' as const,
+          task: 'Source code analysis',
           attachments: [{
             type: 'code' as const,
             content: `// Vulnerable code snippet
@@ -586,6 +642,7 @@ curl "https://target.com/uploads/shell.php.jpg?cmd=whoami"
 - Access to all user data
 - Potential lateral movement to internal network`,
           type: 'exploit' as const,
+          task: 'Exploit development',
           attachments: [{
             type: 'payload' as const,
             content: `<?php
@@ -602,13 +659,20 @@ if(isset($_GET['cmd'])) {
     return messageTemplates[agent.id as keyof typeof messageTemplates] || [
       {
         content: `${agent.avatar} **${agent.name} Analysis**\n\nConducting ${agent.role.toLowerCase()} assessment on ${target}...\n\nSpecializing in: ${agent.expertise.join(', ')}`,
-        type: 'analysis' as const
+        type: 'analysis' as const,
+        task: 'General analysis'
       }
     ]
   }
 
   const stopCounselSession = () => {
     setIsSessionActive(false)
+    setAgents(prev => prev.map(agent => ({
+      ...agent,
+      status: 'idle',
+      progress: 0,
+      currentTask: undefined
+    })))
     toast.success('AI Counsel session stopped')
   }
 
@@ -644,6 +708,26 @@ if(isset($_GET['cmd'])) {
       case 'code_review': return <Code className="w-4 h-4 text-blue-500" />
       case 'analysis': return <Search className="w-4 h-4 text-green-500" />
       default: return <MessageCircle className="w-4 h-4 text-gray-500" />
+    }
+  }
+
+  const getStatusIcon = (status: AIAgent['status']) => {
+    switch (status) {
+      case 'thinking': return <Brain className="w-4 h-4 text-blue-500 animate-pulse" />
+      case 'analyzing': return <Search className="w-4 h-4 text-yellow-500 animate-spin" />
+      case 'exploiting': return <Zap className="w-4 h-4 text-orange-500 animate-bounce" />
+      case 'completed': return <CheckCircle className="w-4 h-4 text-green-500" />
+      default: return <Clock className="w-4 h-4 text-gray-400" />
+    }
+  }
+
+  const getStatusColor = (status: AIAgent['status']) => {
+    switch (status) {
+      case 'thinking': return 'border-blue-300 bg-blue-50 dark:bg-blue-900/20'
+      case 'analyzing': return 'border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20'
+      case 'exploiting': return 'border-orange-300 bg-orange-50 dark:bg-orange-900/20'
+      case 'completed': return 'border-green-300 bg-green-50 dark:bg-green-900/20'
+      default: return 'border-gray-200 dark:border-gray-700'
     }
   }
 
@@ -768,40 +852,70 @@ if(isset($_GET['cmd'])) {
             </div>
           </div>
 
-          {/* AI Agents Selection */}
+          {/* AI Agents Selection with Status */}
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">AI Agents</h3>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {availableAgents.map((agent) => (
-                <label key={agent.id} className="flex items-start space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedAgents.includes(agent.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedAgents(prev => [...prev, agent.id])
-                      } else {
-                        setSelectedAgents(prev => prev.filter(id => id !== agent.id))
-                      }
-                    }}
-                    disabled={isSessionActive}
-                    className="mt-1 rounded"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg">{agent.avatar}</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{agent.name}</span>
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {agents.map((agent) => (
+                <div
+                  key={agent.id}
+                  className={`p-3 border rounded-lg transition-all duration-200 ${getStatusColor(agent.status)}`}
+                >
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedAgents.includes(agent.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedAgents(prev => [...prev, agent.id])
+                        } else {
+                          setSelectedAgents(prev => prev.filter(id => id !== agent.id))
+                        }
+                      }}
+                      disabled={isSessionActive}
+                      className="mt-1 rounded"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg">{agent.avatar}</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{agent.name}</span>
+                        </div>
+                        {selectedAgents.includes(agent.id) && (
+                          <div className="flex items-center space-x-1">
+                            {getStatusIcon(agent.status)}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">{agent.role}</p>
+                      
+                      {/* Current Task */}
+                      {agent.currentTask && selectedAgents.includes(agent.id) && (
+                        <div className="mt-2">
+                          <p className="text-xs text-gray-700 dark:text-gray-300 font-medium">
+                            {agent.currentTask}
+                          </p>
+                          {agent.status !== 'idle' && agent.status !== 'completed' && (
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-1">
+                              <div
+                                className="bg-primary-500 h-1 rounded-full transition-all duration-300"
+                                style={{ width: `${agent.progress}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {agent.expertise.slice(0, 2).map((skill) => (
+                          <span key={skill} className="status-badge status-info text-xs">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{agent.role}</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {agent.expertise.slice(0, 2).map((skill) => (
-                        <span key={skill} className="status-badge status-info text-xs">
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </label>
+                  </label>
+                </div>
               ))}
             </div>
           </div>
@@ -828,7 +942,7 @@ if(isset($_GET['cmd'])) {
 
         {/* Counsel Chat */}
         <div className="lg:col-span-3">
-          <div className="card h-[600px] flex flex-col">
+          <div className="card h-[700px] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">AI Security Counsel Chat</h3>
               <div className="flex items-center space-x-2">
@@ -840,8 +954,12 @@ if(isset($_GET['cmd'])) {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-              <AnimatePresence>
+            <div 
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto space-y-4 mb-4 scroll-smooth"
+              style={{ scrollBehavior: 'smooth' }}
+            >
+              <AnimatePresence mode="popLayout">
                 {messages.map((message) => {
                   const agent = getAgentByMessage(message)
                   return (
@@ -849,6 +967,8 @@ if(isset($_GET['cmd'])) {
                       key={message.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      layout
                       className={`p-4 rounded-lg ${
                         message.agentId === 'system' 
                           ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
@@ -867,7 +987,7 @@ if(isset($_GET['cmd'])) {
                             </div>
                           )}
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-2">
                             <span className="font-medium text-gray-900 dark:text-white">
                               {agent ? agent.name : 'System'}
@@ -914,7 +1034,7 @@ if(isset($_GET['cmd'])) {
                                       Copy
                                     </button>
                                   </div>
-                                  <pre className="text-xs text-gray-800 dark:text-gray-200 overflow-x-auto">
+                                  <pre className="text-xs text-gray-800 dark:text-gray-200 overflow-x-auto whitespace-pre-wrap">
                                     {attachment.content}
                                   </pre>
                                 </div>
@@ -937,8 +1057,6 @@ if(isset($_GET['cmd'])) {
                   </p>
                 </div>
               )}
-              
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Session Stats */}
@@ -947,7 +1065,9 @@ if(isset($_GET['cmd'])) {
                 <div className="grid grid-cols-4 gap-4 text-center">
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Active Agents</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">{selectedAgents.length}</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {agents.filter(a => selectedAgents.includes(a.id) && a.status !== 'idle').length}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Messages</p>
