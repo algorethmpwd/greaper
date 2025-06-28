@@ -29,12 +29,12 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'text-red-600 bg-red-100 border-red-200'
-      case 'high': return 'text-red-500 bg-red-50 border-red-200'
-      case 'medium': return 'text-yellow-600 bg-yellow-100 border-yellow-200'
-      case 'low': return 'text-blue-600 bg-blue-100 border-blue-200'
-      case 'info': return 'text-gray-600 bg-gray-100 border-gray-200'
-      default: return 'text-gray-600 bg-gray-100 border-gray-200'
+      case 'critical': return 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+      case 'high': return 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+      case 'medium': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+      case 'low': return 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+      case 'info': return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+      default: return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
     }
   }
 
@@ -86,8 +86,8 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Scan Results</h2>
-          <p className="text-gray-600">{result.url}</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Scan Results</h2>
+          <p className="text-gray-600 dark:text-gray-400">{result.url}</p>
         </div>
         <div className="flex space-x-2">
           <button
@@ -110,7 +110,7 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-fit">
         {[
           { id: 'overview', label: 'Overview' },
           { id: 'findings', label: 'Findings' },
@@ -121,8 +121,8 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
             onClick={() => setActiveTab(tab.id as any)}
             className={`py-2 px-4 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
             {tab.label}
@@ -142,8 +142,8 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
             <div className="card">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Findings</p>
-                  <p className="text-2xl font-bold text-gray-900">{result.findings.length}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Findings</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{result.findings.length}</p>
                 </div>
                 <AlertTriangle className="w-8 h-8 text-gray-400" />
               </div>
@@ -151,8 +151,8 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
             <div className="card">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Critical/High</p>
-                  <p className="text-2xl font-bold text-red-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Critical/High</p>
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                     {(severityCounts.critical || 0) + (severityCounts.high || 0)}
                   </p>
                 </div>
@@ -162,8 +162,8 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
             <div className="card">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Scan Duration</p>
-                  <p className="text-2xl font-bold text-gray-900">{result.metadata.duration}s</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Scan Duration</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{result.metadata.duration}s</p>
                 </div>
                 <CheckCircle className="w-8 h-8 text-green-400" />
               </div>
@@ -171,8 +171,8 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
             <div className="card">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Requests Made</p>
-                  <p className="text-2xl font-bold text-gray-900">{result.metadata.requestCount}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Requests Made</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{result.metadata.requestCount}</p>
                 </div>
                 <Globe className="w-8 h-8 text-blue-400" />
               </div>
@@ -181,7 +181,7 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
 
           {/* Severity Breakdown */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Severity Breakdown</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Severity Breakdown</h3>
             <div className="space-y-3">
               {['critical', 'high', 'medium', 'low', 'info'].map((severity) => {
                 const count = severityCounts[severity] || 0
@@ -190,8 +190,8 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
                 return (
                   <div key={severity} className="flex items-center space-x-3">
                     {getSeverityIcon(severity)}
-                    <span className="capitalize font-medium w-16">{severity}</span>
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <span className="capitalize font-medium w-16 text-gray-900 dark:text-white">{severity}</span>
+                    <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${
                           severity === 'critical' ? 'bg-red-600' :
@@ -202,7 +202,7 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
                         style={{ width: `${percentage}%` }}
                       ></div>
                     </div>
-                    <span className="text-sm text-gray-600 w-8">{count}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 w-8">{count}</span>
                   </div>
                 )
               })}
@@ -212,7 +212,7 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
           {/* Technologies Detected */}
           {result.metadata.technologies.length > 0 && (
             <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Technologies Detected</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Technologies Detected</h3>
               <div className="flex flex-wrap gap-2">
                 {result.metadata.technologies.map((tech, index) => (
                   <span key={index} className="status-badge status-info">
@@ -248,7 +248,7 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
                 <option value="info">Info</option>
               </select>
             </div>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               Showing {filteredFindings.length} of {result.findings.length} findings
             </span>
           </div>
@@ -267,7 +267,7 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
                   <div className="flex items-center space-x-3">
                     {getTypeIcon(finding.type)}
                     <div>
-                      <h4 className="font-semibold text-gray-900">{finding.type}</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">{finding.type}</h4>
                       <div className="flex items-center space-x-2 mt-1">
                         {getSeverityIcon(finding.severity)}
                         <span className="text-sm font-medium capitalize">{finding.severity}</span>
@@ -281,7 +281,7 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
                   </div>
                   <button
                     onClick={() => copyToClipboard(JSON.stringify(finding, null, 2))}
-                    className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                    className="p-2 hover:bg-white/50 dark:hover:bg-black/20 rounded-lg transition-colors"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
@@ -289,13 +289,13 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
 
                 <div className="space-y-4">
                   <div>
-                    <h5 className="font-medium text-gray-900 mb-2">Description</h5>
-                    <p className="text-gray-700">{finding.description}</p>
+                    <h5 className="font-medium text-gray-900 dark:text-white mb-2">Description</h5>
+                    <p className="text-gray-700 dark:text-gray-300">{finding.description}</p>
                   </div>
 
                   {finding.evidence && (
                     <div>
-                      <h5 className="font-medium text-gray-900 mb-2">Evidence</h5>
+                      <h5 className="font-medium text-gray-900 dark:text-white mb-2">Evidence</h5>
                       <pre className="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">
                         {finding.evidence}
                       </pre>
@@ -303,23 +303,23 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
                   )}
 
                   <div>
-                    <h5 className="font-medium text-gray-900 mb-2">Impact</h5>
-                    <p className="text-gray-700">{finding.impact}</p>
+                    <h5 className="font-medium text-gray-900 dark:text-white mb-2">Impact</h5>
+                    <p className="text-gray-700 dark:text-gray-300">{finding.impact}</p>
                   </div>
 
                   <div>
-                    <h5 className="font-medium text-gray-900 mb-2">Recommendation</h5>
-                    <p className="text-gray-700">{finding.recommendation}</p>
+                    <h5 className="font-medium text-gray-900 dark:text-white mb-2">Recommendation</h5>
+                    <p className="text-gray-700 dark:text-gray-300">{finding.recommendation}</p>
                   </div>
 
                   <div>
-                    <h5 className="font-medium text-gray-900 mb-2">Remediation</h5>
-                    <p className="text-gray-700">{finding.remediation}</p>
+                    <h5 className="font-medium text-gray-900 dark:text-white mb-2">Remediation</h5>
+                    <p className="text-gray-700 dark:text-gray-300">{finding.remediation}</p>
                   </div>
 
                   {finding.references && finding.references.length > 0 && (
                     <div>
-                      <h5 className="font-medium text-gray-900 mb-2">References</h5>
+                      <h5 className="font-medium text-gray-900 dark:text-white mb-2">References</h5>
                       <div className="space-y-1">
                         {finding.references.map((ref, refIndex) => (
                           <a
@@ -327,7 +327,7 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
                             href={ref}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center space-x-1"
                           >
                             <ExternalLink className="w-3 h-3" />
                             <span>{ref}</span>
@@ -344,8 +344,8 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
           {filteredFindings.length === 0 && (
             <div className="text-center py-12">
               <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No findings match the filter</h3>
-              <p className="text-gray-600">Try adjusting your filter criteria</p>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No findings match the filter</h3>
+              <p className="text-gray-600 dark:text-gray-400">Try adjusting your filter criteria</p>
             </div>
           )}
         </motion.div>
@@ -359,27 +359,27 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
         >
           {/* Server Information */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Server Information</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Server Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-600">Server</label>
-                <p className="text-gray-900">{result.metadata.serverInfo.server}</p>
+                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Server</label>
+                <p className="text-gray-900 dark:text-white">{result.metadata.serverInfo.server}</p>
               </div>
               {result.metadata.serverInfo.version && (
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Version</label>
-                  <p className="text-gray-900">{result.metadata.serverInfo.version}</p>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Version</label>
+                  <p className="text-gray-900 dark:text-white">{result.metadata.serverInfo.version}</p>
                 </div>
               )}
               {result.metadata.serverInfo.os && (
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Operating System</label>
-                  <p className="text-gray-900">{result.metadata.serverInfo.os}</p>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Operating System</label>
+                  <p className="text-gray-900 dark:text-white">{result.metadata.serverInfo.os}</p>
                 </div>
               )}
               <div>
-                <label className="text-sm font-medium text-gray-600">Response Size</label>
-                <p className="text-gray-900">{(result.metadata.responseSize / 1024).toFixed(2)} KB</p>
+                <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Response Size</label>
+                <p className="text-gray-900 dark:text-white">{(result.metadata.responseSize / 1024).toFixed(2)} KB</p>
               </div>
             </div>
           </div>
@@ -387,23 +387,23 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
           {/* SSL Certificate Information */}
           {result.metadata.certificates && (
             <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">SSL Certificate</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">SSL Certificate</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Issuer</label>
-                  <p className="text-gray-900">{result.metadata.certificates.issuer}</p>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Issuer</label>
+                  <p className="text-gray-900 dark:text-white">{result.metadata.certificates.issuer}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Expiry Date</label>
-                  <p className="text-gray-900">{result.metadata.certificates.expiry}</p>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Expiry Date</label>
+                  <p className="text-gray-900 dark:text-white">{result.metadata.certificates.expiry}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Algorithm</label>
-                  <p className="text-gray-900">{result.metadata.certificates.algorithm}</p>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Algorithm</label>
+                  <p className="text-gray-900 dark:text-white">{result.metadata.certificates.algorithm}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Key Size</label>
-                  <p className="text-gray-900">{result.metadata.certificates.keySize} bits</p>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Key Size</label>
+                  <p className="text-gray-900 dark:text-white">{result.metadata.certificates.keySize} bits</p>
                 </div>
               </div>
             </div>
@@ -411,27 +411,27 @@ const ScanResultsEnhanced: React.FC<ScanResultsEnhancedProps> = ({ result }) => 
 
           {/* Scan Metadata */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Scan Metadata</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Scan Metadata</h3>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-gray-600">Scan ID</span>
-                <span className="font-mono text-sm">{result.id}</span>
+                <span className="text-gray-600 dark:text-gray-400">Scan ID</span>
+                <span className="font-mono text-sm text-gray-900 dark:text-white">{result.id}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Timestamp</span>
-                <span className="font-mono text-sm">{result.timestamp}</span>
+                <span className="text-gray-600 dark:text-gray-400">Timestamp</span>
+                <span className="font-mono text-sm text-gray-900 dark:text-white">{result.timestamp}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Duration</span>
-                <span className="font-mono text-sm">{result.metadata.duration} seconds</span>
+                <span className="text-gray-600 dark:text-gray-400">Duration</span>
+                <span className="font-mono text-sm text-gray-900 dark:text-white">{result.metadata.duration} seconds</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Total Requests</span>
-                <span className="font-mono text-sm">{result.metadata.requestCount}</span>
+                <span className="text-gray-600 dark:text-gray-400">Total Requests</span>
+                <span className="font-mono text-sm text-gray-900 dark:text-white">{result.metadata.requestCount}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Scan Types</span>
-                <span className="font-mono text-sm">{result.scanTypes.join(', ')}</span>
+                <span className="text-gray-600 dark:text-gray-400">Scan Types</span>
+                <span className="font-mono text-sm text-gray-900 dark:text-white">{result.scanTypes.join(', ')}</span>
               </div>
             </div>
           </div>

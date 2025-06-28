@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Scanner from './pages/Scanner'
 import Results from './pages/Results'
 import Settings from './pages/Settings'
+import Counsel from './pages/Counsel'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/scanner" element={<Scanner />} />
             <Route path="/results" element={<Results />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/counsel" element={<Counsel />} />
           </Routes>
         </motion.main>
       </div>
