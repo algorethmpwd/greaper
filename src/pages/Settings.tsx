@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Save, RefreshCw, Shield, Bell, Database, Globe, Key, Users } from 'lucide-react'
+import { Save, RefreshCw, Shield, Bell, Database, Globe, Key, Users, Brain } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const Settings: React.FC = () => {
@@ -30,6 +30,18 @@ const Settings: React.FC = () => {
     exportFormat: 'json',
     autoSaveResults: true,
     retentionDays: 30,
+
+    // AI Settings
+    openaiApiKey: '',
+    anthropicApiKey: '',
+    geminiApiKey: '',
+    mistralApiKey: '',
+    openrouterApiKey: '',
+    defaultAiProvider: 'openai',
+    aiTemperature: 0.7,
+    aiMaxTokens: 2000,
+    enableAiAssistant: true,
+    bugBountyMode: true,
   })
 
   const handleSettingChange = (key: string, value: any) => {
@@ -63,6 +75,16 @@ const Settings: React.FC = () => {
       exportFormat: 'json',
       autoSaveResults: true,
       retentionDays: 30,
+      openaiApiKey: '',
+      anthropicApiKey: '',
+      geminiApiKey: '',
+      mistralApiKey: '',
+      openrouterApiKey: '',
+      defaultAiProvider: 'openai',
+      aiTemperature: 0.7,
+      aiMaxTokens: 2000,
+      enableAiAssistant: true,
+      bugBountyMode: true,
     })
     toast.success('Settings reset to defaults')
   }
@@ -133,6 +155,54 @@ const Settings: React.FC = () => {
           label: 'Verify SSL Certificates',
           type: 'boolean',
           description: 'Verify SSL certificates for HTTPS requests'
+        }
+      ]
+    },
+    {
+      title: 'AI Assistant Configuration',
+      icon: Brain,
+      settings: [
+        {
+          key: 'enableAiAssistant',
+          label: 'Enable AI Assistant',
+          type: 'boolean',
+          description: 'Enable AI-powered security analysis and recommendations'
+        },
+        {
+          key: 'bugBountyMode',
+          label: 'Bug Bounty Mode',
+          type: 'boolean',
+          description: 'Optimize AI responses for bug bounty hunting'
+        },
+        {
+          key: 'defaultAiProvider',
+          label: 'Default AI Provider',
+          type: 'select',
+          options: [
+            { value: 'openai', label: 'OpenAI' },
+            { value: 'anthropic', label: 'Anthropic' },
+            { value: 'gemini', label: 'Google Gemini' },
+            { value: 'mistral', label: 'Mistral' },
+            { value: 'openrouter', label: 'OpenRouter' }
+          ],
+          description: 'Default AI provider for analysis'
+        },
+        {
+          key: 'aiTemperature',
+          label: 'AI Temperature',
+          type: 'range',
+          min: 0,
+          max: 1,
+          step: 0.1,
+          description: 'Controls AI response creativity (0 = focused, 1 = creative)'
+        },
+        {
+          key: 'aiMaxTokens',
+          label: 'Max Tokens',
+          type: 'number',
+          description: 'Maximum tokens for AI responses',
+          min: 500,
+          max: 4000
         }
       ]
     },
@@ -212,6 +282,44 @@ const Settings: React.FC = () => {
     }
   ]
 
+  // AI API Keys section
+  const aiApiKeysSection = {
+    title: 'AI API Keys',
+    icon: Key,
+    settings: [
+      {
+        key: 'openaiApiKey',
+        label: 'OpenAI API Key',
+        type: 'password',
+        description: 'API key for OpenAI GPT models'
+      },
+      {
+        key: 'anthropicApiKey',
+        label: 'Anthropic API Key',
+        type: 'password',
+        description: 'API key for Claude models'
+      },
+      {
+        key: 'geminiApiKey',
+        label: 'Google Gemini API Key',
+        type: 'password',
+        description: 'API key for Gemini models'
+      },
+      {
+        key: 'mistralApiKey',
+        label: 'Mistral API Key',
+        type: 'password',
+        description: 'API key for Mistral models'
+      },
+      {
+        key: 'openrouterApiKey',
+        label: 'OpenRouter API Key',
+        type: 'password',
+        description: 'API key for OpenRouter (access to multiple models)'
+      }
+    ]
+  }
+
   const renderSettingInput = (setting: any) => {
     const value = settings[setting.key as keyof typeof settings]
 
@@ -225,7 +333,7 @@ const Settings: React.FC = () => {
               onChange={(e) => handleSettingChange(setting.key, e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+            <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
           </label>
         )
 
@@ -239,6 +347,22 @@ const Settings: React.FC = () => {
             max={setting.max}
             className="input-field w-32"
           />
+        )
+
+      case 'range':
+        return (
+          <div className="flex items-center space-x-4">
+            <input
+              type="range"
+              value={value as number}
+              onChange={(e) => handleSettingChange(setting.key, parseFloat(e.target.value))}
+              min={setting.min}
+              max={setting.max}
+              step={setting.step}
+              className="flex-1"
+            />
+            <span className="text-sm text-gray-600 dark:text-gray-400 w-12">{value}</span>
+          </div>
         )
 
       case 'select':
@@ -263,7 +387,7 @@ const Settings: React.FC = () => {
             value={value as string}
             onChange={(e) => handleSettingChange(setting.key, e.target.value)}
             className="input-field w-64"
-            placeholder="Enter API key..."
+            placeholder={`Enter ${setting.label.toLowerCase()}...`}
           />
         )
 
@@ -284,8 +408,8 @@ const Settings: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1">Configure scanner behavior and preferences</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Configure scanner behavior and AI assistant preferences</p>
         </div>
         <div className="flex space-x-3">
           <button onClick={handleReset} className="btn-secondary flex items-center space-x-2">
@@ -301,7 +425,7 @@ const Settings: React.FC = () => {
 
       {/* Settings Sections */}
       <div className="space-y-8">
-        {settingSections.map((section, sectionIndex) => (
+        {[...settingSections, aiApiKeysSection].map((section, sectionIndex) => (
           <motion.div
             key={section.title}
             initial={{ opacity: 0, y: 20 }}
@@ -310,20 +434,20 @@ const Settings: React.FC = () => {
             className="card"
           >
             <div className="flex items-center space-x-3 mb-6">
-              <div className="p-2 bg-primary-100 rounded-lg">
-                <section.icon className="w-5 h-5 text-primary-600" />
+              <div className="p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg">
+                <section.icon className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">{section.title}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{section.title}</h3>
             </div>
 
             <div className="space-y-6">
               {section.settings.map((setting) => (
-                <div key={setting.key} className="flex items-center justify-between py-4 border-b border-gray-100 last:border-b-0">
+                <div key={setting.key} className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
                   <div className="flex-1">
-                    <label className="block font-medium text-gray-900 mb-1">
+                    <label className="block font-medium text-gray-900 dark:text-white mb-1">
                       {setting.label}
                     </label>
-                    <p className="text-sm text-gray-600">{setting.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{setting.description}</p>
                   </div>
                   <div className="ml-6">
                     {renderSettingInput(setting)}
@@ -339,22 +463,22 @@ const Settings: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
+        transition={{ delay: 0.8 }}
         className="card"
       >
         <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-warning-100 rounded-lg">
-            <Users className="w-5 h-5 text-warning-600" />
+          <div className="p-2 bg-warning-100 dark:bg-warning-900/20 rounded-lg">
+            <Users className="w-5 h-5 text-warning-600 dark:text-warning-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">Advanced Settings</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Advanced Settings</h3>
         </div>
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
           <div className="flex items-start space-x-3">
-            <Shield className="w-5 h-5 text-yellow-600 mt-0.5" />
+            <Shield className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
             <div>
-              <h4 className="font-medium text-yellow-800">Caution Required</h4>
-              <p className="text-sm text-yellow-700 mt-1">
+              <h4 className="font-medium text-yellow-800 dark:text-yellow-300">Caution Required</h4>
+              <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
                 These settings can significantly impact scanner performance and behavior. 
                 Only modify if you understand the implications.
               </p>
@@ -363,31 +487,31 @@ const Settings: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          <button className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+          <button className="w-full text-left p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-gray-900">Custom Payloads</h4>
-                <p className="text-sm text-gray-600">Manage custom payload files for vulnerability testing</p>
+                <h4 className="font-medium text-gray-900 dark:text-white">Custom Payloads</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Manage custom payload files for vulnerability testing</p>
               </div>
               <span className="text-gray-400">→</span>
             </div>
           </button>
 
-          <button className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+          <button className="w-full text-left p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-gray-900">Proxy Configuration</h4>
-                <p className="text-sm text-gray-600">Configure proxy settings for network requests</p>
+                <h4 className="font-medium text-gray-900 dark:text-white">Proxy Configuration</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Configure proxy settings for network requests</p>
               </div>
               <span className="text-gray-400">→</span>
             </div>
           </button>
 
-          <button className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+          <button className="w-full text-left p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-gray-900">Custom Headers</h4>
-                <p className="text-sm text-gray-600">Add custom HTTP headers to requests</p>
+                <h4 className="font-medium text-gray-900 dark:text-white">Custom Headers</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Add custom HTTP headers to requests</p>
               </div>
               <span className="text-gray-400">→</span>
             </div>

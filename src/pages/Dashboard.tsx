@@ -85,10 +85,10 @@ const Dashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Security Dashboard</h1>
-          <p className="text-gray-600 mt-1">Monitor your web security scanning activities</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Security Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Monitor your web security scanning activities</p>
         </div>
-        <div className="flex items-center space-x-2 text-sm text-gray-500">
+        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
           <Clock className="w-4 h-4" />
           <span>Last updated: {new Date().toLocaleTimeString()}</span>
         </div>
@@ -106,17 +106,17 @@ const Dashboard: React.FC = () => {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{card.title}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                   {stats.totalScans === 0 ? (
-                    <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
+                    <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-8 w-16 rounded"></div>
                   ) : (
                     card.value.toLocaleString()
                   )}
                 </p>
                 <div className="flex items-center mt-2">
                   <TrendingUp className="w-4 h-4 text-success-500 mr-1" />
-                  <span className="text-sm text-success-600">{card.change}</span>
+                  <span className="text-sm text-success-600 dark:text-success-400">{card.change}</span>
                 </div>
               </div>
               <div className={`p-3 rounded-lg ${card.color}`}>
@@ -136,13 +136,20 @@ const Dashboard: React.FC = () => {
           transition={{ delay: 0.3 }}
           className="card"
         >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Activity</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Weekly Activity</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={weeklyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="day" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#1f2937', 
+                  border: 'none', 
+                  borderRadius: '8px',
+                  color: '#f9fafb'
+                }} 
+              />
               <Bar dataKey="scans" fill="#0ea5e9" name="Scans" />
               <Bar dataKey="vulnerabilities" fill="#ef4444" name="Vulnerabilities" />
             </BarChart>
@@ -156,7 +163,7 @@ const Dashboard: React.FC = () => {
           transition={{ delay: 0.4 }}
           className="card"
         >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Vulnerability Types</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Vulnerability Types</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -171,7 +178,14 @@ const Dashboard: React.FC = () => {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#1f2937', 
+                  border: 'none', 
+                  borderRadius: '8px',
+                  color: '#f9fafb'
+                }} 
+              />
             </PieChart>
           </ResponsiveContainer>
         </motion.div>
@@ -185,27 +199,27 @@ const Dashboard: React.FC = () => {
         className="card"
       >
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Scans</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Scans</h3>
           <button className="btn-primary text-sm">View All</button>
         </div>
         
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-medium text-gray-600">URL</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Vulnerabilities</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Time</th>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
+                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">URL</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Status</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Vulnerabilities</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Time</th>
               </tr>
             </thead>
             <tbody>
               {recentScans.map((scan) => (
-                <tr key={scan.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr key={scan.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                   <td className="py-3 px-4">
                     <div className="flex items-center">
                       <Globe className="w-4 h-4 text-gray-400 mr-2" />
-                      <span className="font-medium text-gray-900">{scan.url}</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{scan.url}</span>
                     </div>
                   </td>
                   <td className="py-3 px-4">
@@ -221,12 +235,12 @@ const Dashboard: React.FC = () => {
                   </td>
                   <td className="py-3 px-4">
                     <span className={`font-medium ${
-                      scan.vulnerabilities > 0 ? 'text-danger-600' : 'text-success-600'
+                      scan.vulnerabilities > 0 ? 'text-danger-600 dark:text-danger-400' : 'text-success-600 dark:text-success-400'
                     }`}>
                       {scan.vulnerabilities}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-gray-500">{scan.timestamp}</td>
+                  <td className="py-3 px-4 text-gray-500 dark:text-gray-400">{scan.timestamp}</td>
                 </tr>
               ))}
             </tbody>

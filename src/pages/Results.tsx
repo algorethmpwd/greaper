@@ -101,10 +101,10 @@ const Results: React.FC = () => {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'high': return 'text-danger-600 bg-danger-100'
-      case 'medium': return 'text-warning-600 bg-warning-100'
-      case 'low': return 'text-primary-600 bg-primary-100'
-      default: return 'text-gray-600 bg-gray-100'
+      case 'high': return 'text-danger-600 dark:text-danger-400 bg-danger-100 dark:bg-danger-900/20'
+      case 'medium': return 'text-warning-600 dark:text-warning-400 bg-warning-100 dark:bg-warning-900/20'
+      case 'low': return 'text-primary-600 dark:text-primary-400 bg-primary-100 dark:bg-primary-900/20'
+      default: return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800'
     }
   }
 
@@ -122,8 +122,8 @@ const Results: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Scan Results</h1>
-          <p className="text-gray-600 mt-1">View and analyze your security scan results</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Scan Results</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">View and analyze your security scan results</p>
         </div>
         <button className="btn-primary flex items-center space-x-2">
           <Download className="w-4 h-4" />
@@ -184,13 +184,13 @@ const Results: React.FC = () => {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center space-x-2">
                   <Globe className="w-4 h-4 text-gray-400" />
-                  <span className="font-medium text-gray-900 truncate">{result.url}</span>
+                  <span className="font-medium text-gray-900 dark:text-white truncate">{result.url}</span>
                 </div>
                 {getStatusIcon(result.status)}
               </div>
 
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-gray-500">{result.timestamp}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{result.timestamp}</span>
                 <div className="flex items-center space-x-2">
                   {result.vulnerabilities > 0 ? (
                     <span className="status-badge status-danger">
@@ -217,8 +217,8 @@ const Results: React.FC = () => {
           {filteredResults.length === 0 && (
             <div className="text-center py-12">
               <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No results found</h3>
-              <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No results found</h3>
+              <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filter criteria</p>
             </div>
           )}
         </div>
@@ -232,7 +232,7 @@ const Results: React.FC = () => {
               className="card"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Scan Details</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Scan Details</h3>
                 <button className="btn-secondary flex items-center space-x-2">
                   <Eye className="w-4 h-4" />
                   <span>View Full Report</span>
@@ -241,37 +241,37 @@ const Results: React.FC = () => {
 
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">URL</label>
-                  <p className="text-gray-900 break-all">{selectedResult.url}</p>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">URL</label>
+                  <p className="text-gray-900 dark:text-white break-all">{selectedResult.url}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Scan Date</label>
-                  <p className="text-gray-900">{selectedResult.timestamp}</p>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Scan Date</label>
+                  <p className="text-gray-900 dark:text-white">{selectedResult.timestamp}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Status</label>
+                  <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Status</label>
                   <div className="flex items-center space-x-2 mt-1">
                     {getStatusIcon(selectedResult.status)}
-                    <span className="capitalize">{selectedResult.status}</span>
+                    <span className="capitalize text-gray-900 dark:text-white">{selectedResult.status}</span>
                   </div>
                 </div>
               </div>
 
               {selectedResult.findings.length > 0 ? (
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-4">Findings</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">Findings</h4>
                   <div className="space-y-4">
                     {selectedResult.findings.map((finding, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
-                          <h5 className="font-medium text-gray-900">{finding.type}</h5>
+                          <h5 className="font-medium text-gray-900 dark:text-white">{finding.type}</h5>
                           <span className={`status-badge ${getSeverityColor(finding.severity)}`}>
                             {finding.severity.toUpperCase()}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mb-3">{finding.description}</p>
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                          <p className="text-sm text-blue-800">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{finding.description}</p>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                          <p className="text-sm text-blue-800 dark:text-blue-300">
                             <strong>Recommendation:</strong> {finding.recommendation}
                           </p>
                         </div>
@@ -282,8 +282,8 @@ const Results: React.FC = () => {
               ) : (
                 <div className="text-center py-8">
                   <CheckCircle className="w-12 h-12 text-success-500 mx-auto mb-4" />
-                  <h4 className="font-medium text-gray-900 mb-2">No vulnerabilities found</h4>
-                  <p className="text-gray-600">This URL appears to be secure based on the selected scans.</p>
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">No vulnerabilities found</h4>
+                  <p className="text-gray-600 dark:text-gray-400">This URL appears to be secure based on the selected scans.</p>
                 </div>
               )}
             </motion.div>
@@ -291,8 +291,8 @@ const Results: React.FC = () => {
             <div className="card">
               <div className="text-center py-12">
                 <Eye className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Select a scan result</h3>
-                <p className="text-gray-600">Choose a scan from the list to view detailed findings</p>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Select a scan result</h3>
+                <p className="text-gray-600 dark:text-gray-400">Choose a scan from the list to view detailed findings</p>
               </div>
             </div>
           )}

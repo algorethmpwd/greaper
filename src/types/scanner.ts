@@ -98,3 +98,26 @@ export interface PayloadSet {
   payloads: string[]
   description: string
 }
+
+export interface AIMessage {
+  id: string
+  type: 'user' | 'assistant'
+  content: string
+  timestamp: Date
+  scanContext?: ScanResult
+  findings?: Finding[]
+}
+
+export interface AISettings {
+  openaiKey: string
+  anthropicKey: string
+  geminiKey: string
+  mistralKey: string
+  openrouterKey: string
+  selectedProvider: string
+  model: string
+  temperature: number
+  maxTokens: number
+  includeContext: boolean
+  bugBountyMode: boolean
+}
