@@ -27,18 +27,73 @@ import asyncio
 import aiohttp
 from collections import defaultdict
 import urllib3
+from urllib3.exceptions import InsecureRequestWarning
 import ssl
 from ipwhois import IPWhois
 from packaging import version
 import html
 import warnings
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from dotenv import load_dotenv
+import logging
+from tqdm import tqdm
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Configure logging system (Phase 1 improvement from fullplan.md)
+def setup_logging():
+    """
+    Initialize structured logging system with multiple log files
+
+    Per PROJECT_SPEC.md best practices - comprehensive logging
+    """
+    log_dir = os.path.join(os.getcwd(), 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+
+    # Configure log format
+    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(lineno)d - %(message)s'
+    date_format = '%Y-%m-%d %H:%M:%S'
+
+    # Root logger
+    logging.basicConfig(
+        level=logging.DEBUG if os.getenv('VERBOSE', 'false').lower() == 'true' else logging.INFO,
+        format=log_format,
+        datefmt=date_format
+    )
+
+    # File handlers for different log levels
+    debug_handler = logging.FileHandler(os.path.join(log_dir, 'greaper_debug.log'))
+    debug_handler.setLevel(logging.DEBUG)
+    debug_handler.setFormatter(logging.Formatter(log_format, date_format))
+
+    info_handler = logging.FileHandler(os.path.join(log_dir, 'greaper_info.log'))
+    info_handler.setLevel(logging.INFO)
+    info_handler.setFormatter(logging.Formatter(log_format, date_format))
+
+    error_handler = logging.FileHandler(os.path.join(log_dir, 'greaper_errors.log'))
+    error_handler.setLevel(logging.ERROR)
+    error_handler.setFormatter(logging.Formatter(log_format, date_format))
+
+    findings_handler = logging.FileHandler(os.path.join(log_dir, 'greaper_findings.log'))
+    findings_handler.setLevel(logging.WARNING)  # Findings logged as WARNING
+    findings_handler.setFormatter(logging.Formatter(log_format, date_format))
+
+    # Add handlers to root logger
+    logger = logging.getLogger()
+    logger.addHandler(debug_handler)
+    logger.addHandler(info_handler)
+    logger.addHandler(error_handler)
+    logger.addHandler(findings_handler)
+
+    return logger
+
+# Initialize logging
+logger = setup_logging()
 
 # Multiple layers of warning suppression to ensure no SSL warnings appear
 warnings.filterwarnings('ignore')
 urllib3.disable_warnings()
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+urllib3.disable_warnings(InsecureRequestWarning)
 
 # Monkey patch the warnings module
 def ignore_warnings(*args, **kwargs):
@@ -55,6 +110,9 @@ COLOR_YELLOW = "\033[93m"
 COLOR_BLUE = "\033[94m"
 COLOR_GREY = "\033[90m"
 COLOR_RESET = "\033[0m"
+
+# Get version from environment or use default
+GREAPER_VERSION = os.getenv('GREAPER_VERSION', 'v2.0')
 
 # List of available fonts in pyfiglet
 available_fonts = pyfiglet.FigletFont.getFonts()
@@ -74,6 +132,7 @@ colored_ascii = f"\033[{color_code}m{ascii_art}\033[0m"
 
 # Print the colored ASCII art
 print(colored_ascii)
+print(f"\033[{color_code}m{GREAPER_VERSION}\033[0m")
 print(" " * 2 + "made by algorethm")
 
 def save_results(output_file, results):
@@ -437,58 +496,6 @@ def process_urls_for_status_code(urls, output_file=None):
         
     for url in valid_urls:
         check_status_code(url, output_file)
-    
-    # Print total time elapsed at the very endif args.sc:
-        results = []
-        if args.url:
-            result = check_status_code(args.url)
-            results.extend(result)
-        elif args.list:
-            with open(args.list, 'r') as f:
-                urls = [line.strip() for line in f]
-            for url in urls:
-                result = check_status_code(url)
-                results.extend(result)
-        if args.output:
-            save_results(args.output, results, "Status Code Check")
-    if hasattr(check_status_code, 'start_time'):
-        elapsed_time = time.time() - check_status_code.start_time
-        print(f"\n{COLOR_BLUE}[*] Total time elapsed: {elapsed_time:.2f} seconds{COLOR_RESET}")
-
-def get_subdomains_from_crtsh(domain):
-    print(f"[*] Fetching subdomains from crt.sh for {domain}")
-    try:
-        response = requests.get(f"https://crt.sh/?q=%25.{domain}&output=json")
-        subdomains = set()
-        if response.status_code == 200:
-            certs = response.json()
-            for cert in certs:
-                if "name_value" in cert:
-                    subdomains.update(cert['name_value'].splitlines())
-        return list(subdomains)
-    except Exception as e:
-        print(f"{COLOR_ORANGE}[-] Error fetching subdomains from crt.sh: {str(e)}{COLOR_RESET}")
-        return []
-
-def get_subdomains_from_google(domain):
-    print(f"[*] Fetching subdomains from Google for {domain}")
-    subdomains = []
-    query = f"site:{domain} -www"
-    try:
-        search_url = f"https://www.google.com/search?q={query}&num=100"
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        response = requests.get(search_url, headers=headers)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            for a_tag in soup.find_all('a'):
-                href = a_tag.get('href')
-                if href and domain in href:
-                    subdomain = re.search(r'https?://([a-zA-Z0-9.-]+)', href)
-                    if subdomain:
-                        subdomains.append(subdomain.group(1))
-    except Exception as e:
-        print(f"{COLOR_ORANGE}[-] Error fetching subdomains from Google: {str(e)}{COLOR_RESET}")
-    return subdomains
 
 async def fetch_subdomains(session, source_url, source_name):
     """Asynchronously fetch subdomains from various sources"""
@@ -521,23 +528,62 @@ def parse_domain_pattern(url):
 async def enumerate_subdomains(url=None, output_file=None, rate_limit=3):
     start_time = time.time()
     print(f"\n{COLOR_BLUE}[*] Starting Greaper Subdomain Enumeration{COLOR_RESET}\n")
-    
+
     base_domain, prefix = parse_domain_pattern(url)
-    
+
+    # Get API keys from environment variables
+    vt_api_key = os.getenv('VIRUSTOTAL_API_KEY', '')
+    st_api_key = os.getenv('SECURITYTRAILS_API_KEY', '')
+
+    # Get enable/disable flags from environment
+    use_virustotal = os.getenv('USE_VIRUSTOTAL', 'false').lower() == 'true' and vt_api_key
+    use_securitytrails = os.getenv('USE_SECURITYTRAILS', 'false').lower() == 'true' and st_api_key
+    use_bufferover = os.getenv('USE_BUFFEROVER', 'false').lower() == 'true'
+    use_riddler = os.getenv('USE_RIDDLER', 'false').lower() == 'true'
+    use_crtsh = os.getenv('USE_CRTSH', 'true').lower() == 'true'
+    use_alienvault = os.getenv('USE_ALIENVAULT', 'true').lower() == 'true'
+    use_hackertarget = os.getenv('USE_HACKERTARGET', 'true').lower() == 'true'
+    use_threatcrowd = os.getenv('USE_THREATCROWD', 'true').lower() == 'true'
+    use_urlscan = os.getenv('USE_URLSCAN', 'true').lower() == 'true'
+    use_certspotter = os.getenv('USE_CERTSPOTTER', 'true').lower() == 'true'
+    use_threatminer = os.getenv('USE_THREATMINER', 'true').lower() == 'true'
+
     # Enhanced sources dictionary with more providers
-    sources = {
-        'crt.sh': f"https://crt.sh/?q=%.{base_domain}&output=json",
-        'alienvault': f"https://otx.alienvault.com/api/v1/indicators/domain/{base_domain}/passive_dns",
-        'hackertarget': f"https://api.hackertarget.com/hostsearch/?q={base_domain}",
-        'riddler': f"https://riddler.io/search/exportcsv?q=pld:{base_domain}",
-        'bufferover': f"https://dns.bufferover.run/dns?q=.{base_domain}",
-        'threatcrowd': f"https://www.threatcrowd.org/searchApi/v2/domain/report/?domain={base_domain}",
-        'urlscan': f"https://urlscan.io/api/v1/search/?q=domain:{base_domain}",
-        'virustotal': f"https://www.virustotal.com/vtapi/v2/domain/report?apikey=<your-api-key>&domain={base_domain}",
-        'securitytrails': f"https://api.securitytrails.com/v1/domain/{base_domain}/subdomains",
-        'certspotter': f"https://api.certspotter.com/v1/issuances?domain={base_domain}&include_subdomains=true&expand=dns_names",
-        'threatminer': f"https://api.threatminer.org/v2/domain.php?q={base_domain}&rt=5"
-    }
+    sources = {}
+
+    if use_crtsh:
+        sources['crt.sh'] = f"https://crt.sh/?q=%.{base_domain}&output=json"
+    if use_alienvault:
+        sources['alienvault'] = f"https://otx.alienvault.com/api/v1/indicators/domain/{base_domain}/passive_dns"
+    if use_hackertarget:
+        sources['hackertarget'] = f"https://api.hackertarget.com/hostsearch/?q={base_domain}"
+    if use_riddler:
+        sources['riddler'] = f"https://riddler.io/search/exportcsv?q=pld:{base_domain}"
+    if use_bufferover:
+        sources['bufferover'] = f"https://dns.bufferover.run/dns?q=.{base_domain}"
+    if use_threatcrowd:
+        sources['threatcrowd'] = f"https://www.threatcrowd.org/searchApi/v2/domain/report/?domain={base_domain}"
+    if use_urlscan:
+        sources['urlscan'] = f"https://urlscan.io/api/v1/search/?q=domain:{base_domain}"
+    if use_virustotal:
+        sources['virustotal'] = f"https://www.virustotal.com/vtapi/v2/domain/report?apikey={vt_api_key}&domain={base_domain}"
+    if use_securitytrails:
+        sources['securitytrails'] = f"https://api.securitytrails.com/v1/domain/{base_domain}/subdomains"
+    if use_certspotter:
+        sources['certspotter'] = f"https://api.certspotter.com/v1/issuances?domain={base_domain}&include_subdomains=true&expand=dns_names"
+    if use_threatminer:
+        sources['threatminer'] = f"https://api.threatminer.org/v2/domain.php?q={base_domain}&rt=5"
+
+    # Display enabled/disabled sources
+    print(f"{COLOR_GREEN}[+] Enabled sources: {len(sources)}{COLOR_RESET}")
+    if not use_virustotal and not vt_api_key:
+        print(f"{COLOR_ORANGE}[!] VirusTotal disabled (no API key){COLOR_RESET}")
+    if not use_securitytrails and not st_api_key:
+        print(f"{COLOR_ORANGE}[!] SecurityTrails disabled (no API key){COLOR_RESET}")
+    if not use_bufferover:
+        print(f"{COLOR_ORANGE}[!] BufferOver disabled (unreliable service){COLOR_RESET}")
+    if not use_riddler:
+        print(f"{COLOR_ORANGE}[!] Riddler disabled (may require auth){COLOR_RESET}")
     
     subdomains = set()  # Using set to automatically handle duplicates
     connector = aiohttp.TCPConnector(ssl=False)
@@ -644,8 +690,184 @@ async def enumerate_subdomains(url=None, output_file=None, rate_limit=3):
     # Display time elapsed
     elapsed_time = time.time() - start_time
     print(f"{COLOR_BLUE}[*] Time elapsed: {elapsed_time:.2f} seconds{COLOR_RESET}")
-    
+
     return sorted_subdomains
+
+# Helper function for parameter extraction (used by multiple scanners)
+def extract_parameters(url):
+    """Extract parameters from URL"""
+    parsed = urlparse(url)
+    params = parse_qs(parsed.query)
+    return {k: v[0] for k, v in params.items()}
+
+
+# Wordlist Management System (Phase 1 improvement from fullplan.md)
+def load_wordlist(wordlist_path=None, wordlist_type="directory", size="medium"):
+    """
+    Load wordlist from file or use default embedded wordlists
+
+    Per PROJECT_SPEC.md - External wordlist management
+
+    Args:
+        wordlist_path: Custom wordlist file path
+        wordlist_type: Type of wordlist (directory, subdomain, sqli, xss, lfi)
+        size: Size category (small, medium, large) for default wordlists
+
+    Returns:
+        list: Wordlist entries
+    """
+    logger.info(f"Loading wordlist: type={wordlist_type}, size={size}, custom_path={wordlist_path}")
+
+    # If custom wordlist provided, load it
+    if wordlist_path and os.path.isfile(wordlist_path):
+        try:
+            with open(wordlist_path, 'r', encoding='utf-8', errors='ignore') as f:
+                wordlist = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+            logger.info(f"Loaded {len(wordlist)} entries from custom wordlist: {wordlist_path}")
+            return wordlist
+        except Exception as e:
+            logger.error(f"Error loading custom wordlist: {e}")
+            print(f"{COLOR_RED}[-] Error loading wordlist {wordlist_path}: {e}{COLOR_RESET}")
+            return []
+
+    # Otherwise, check for wordlist files in wordlists/ directory
+    wordlist_dir = os.path.join(os.getcwd(), 'wordlists')
+    if os.path.isdir(wordlist_dir):
+        wordlist_file = os.path.join(wordlist_dir, f"{wordlist_type}_{size}.txt")
+        if os.path.isfile(wordlist_file):
+            try:
+                with open(wordlist_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    wordlist = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+                logger.info(f"Loaded {len(wordlist)} entries from {wordlist_file}")
+                return wordlist
+            except Exception as e:
+                logger.error(f"Error loading wordlist file: {e}")
+
+    # Fallback to embedded defaults
+    logger.debug(f"Using embedded default wordlist for {wordlist_type}")
+    return get_default_wordlist(wordlist_type, size)
+
+
+def get_default_wordlist(wordlist_type, size="medium"):
+    """
+    Get embedded default wordlists
+
+    Per PROJECT_SPEC.md - Fallback for wordlist management
+    """
+    defaults = {
+        "directory_small": ["admin", "login", "test", "backup", "api", "config", "uploads", "images", "files", "docs"],
+        "directory_medium": ["admin", "login", "test", "backup", "api", "config", "uploads", "images", "files", "docs",
+                            "assets", "static", "public", "private", "system", "includes", "db", "database", "sql",
+                            "download", "media", "data", "tmp", "temp", "cache", "logs", "old", "new", "dev", "prod"],
+        "subdomain_small": ["www", "mail", "ftp", "admin", "test", "dev", "api", "staging", "blog"],
+        "subdomain_medium": ["www", "mail", "ftp", "admin", "test", "dev", "api", "staging", "blog", "shop",
+                            "store", "forum", "support", "help", "portal", "vpn", "remote", "webmail", "cpanel"],
+    }
+
+    key = f"{wordlist_type}_{size}"
+    return defaults.get(key, defaults.get(f"{wordlist_type}_medium", []))
+
+
+# Progress Indicator Utilities (Phase 1 improvement from fullplan.md)
+def create_progress_bar(iterable, desc="Processing", total=None, disable=False):
+    """
+    Create progress bar with tqdm
+
+    Per PROJECT_SPEC.md - Real-time progress indicators
+
+    Args:
+        iterable: Items to iterate over
+        desc: Description text
+        total: Total number of items (if not inferrable)
+        disable: Disable progress bar
+
+    Returns:
+        tqdm iterator
+    """
+    # Check if progress should be disabled (quiet mode or no TTY)
+    if disable or not sys.stdout.isatty() or os.getenv('QUIET', 'false').lower() == 'true':
+        return iterable
+
+    return tqdm(
+        iterable,
+        desc=desc,
+        total=total,
+        unit="item",
+        bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]',
+        colour='green',
+        ncols=100
+    )
+
+
+class ScanProgress:
+    """
+    Track overall scan progress with statistics
+
+    Per PROJECT_SPEC.md - Real-time scan monitoring
+    """
+    def __init__(self, total_targets=1):
+        self.total_targets = total_targets
+        self.current_target = 0
+        self.total_requests = 0
+        self.successful_requests = 0
+        self.failed_requests = 0
+        self.vulnerabilities_found = 0
+        self.start_time = time.time()
+        self.findings = []
+
+    def update_target(self):
+        self.current_target += 1
+
+    def add_request(self, success=True):
+        self.total_requests += 1
+        if success:
+            self.successful_requests += 1
+        else:
+            self.failed_requests += 1
+
+    def add_finding(self, finding):
+        self.vulnerabilities_found += 1
+        self.findings.append(finding)
+        logger.warning(f"Vulnerability found: {finding}")
+
+    def get_stats(self):
+        elapsed = time.time() - self.start_time
+        success_rate = (self.successful_requests / self.total_requests * 100) if self.total_requests > 0 else 0
+
+        return {
+            'elapsed_time': elapsed,
+            'total_requests': self.total_requests,
+            'successful_requests': self.successful_requests,
+            'failed_requests': self.failed_requests,
+            'success_rate': success_rate,
+            'vulnerabilities_found': self.vulnerabilities_found,
+            'targets_completed': self.current_target,
+            'total_targets': self.total_targets,
+            'req_per_sec': self.total_requests / elapsed if elapsed > 0 else 0
+        }
+
+    def print_summary(self):
+        """Print scan summary statistics"""
+        stats = self.get_stats()
+
+        print(f"\n{COLOR_BLUE}╔══════════════════════════════════════════════════════════════╗{COLOR_RESET}")
+        print(f"{COLOR_BLUE}║                  SCAN SUMMARY STATISTICS                     ║{COLOR_RESET}")
+        print(f"{COLOR_BLUE}╠══════════════════════════════════════════════════════════════╣{COLOR_RESET}")
+        print(f"{COLOR_GREEN}  Elapsed Time:         {stats['elapsed_time']:.2f}s{COLOR_RESET}")
+        print(f"{COLOR_GREEN}  Targets Scanned:      {stats['targets_completed']}/{stats['total_targets']}{COLOR_RESET}")
+        print(f"{COLOR_GREEN}  Total Requests:       {stats['total_requests']}{COLOR_RESET}")
+        print(f"{COLOR_GREEN}  Success Rate:         {stats['success_rate']:.1f}%{COLOR_RESET}")
+        print(f"{COLOR_GREEN}  Request Rate:         {stats['req_per_sec']:.2f} req/s{COLOR_RESET}")
+
+        if stats['vulnerabilities_found'] > 0:
+            print(f"{COLOR_RED}  Vulnerabilities:      {stats['vulnerabilities_found']} found!{COLOR_RESET}")
+        else:
+            print(f"{COLOR_GREEN}  Vulnerabilities:      None found{COLOR_RESET}")
+
+        print(f"{COLOR_BLUE}╚══════════════════════════════════════════════════════════════╝{COLOR_RESET}\n")
+
+        logger.info(f"Scan complete: {stats}")
+
 
 def greaper_sqli_scanner(target, payload_file=None, output_file=None, dynamic_payloads=None):
     """Enhanced SQL injection scanner with multiple detection methods"""
@@ -2630,14 +2852,185 @@ def generate_dynamic_payloads(target_url, scan_type):
         print(f"{COLOR_RED}[-] Error generating dynamic payloads: {str(e)}{COLOR_RESET}")
         return []
 
+def apply_scan_profile(profile_name, args):
+    """
+    Apply predefined scanning profiles (Phase 1 improvement from fullplan.md)
+
+    Profiles automatically set flags for common scanning scenarios
+    """
+    profiles = {
+        "recon": {
+            "description": "Reconnaissance - subdomain enum, crawling, info gathering",
+            "flags": {
+                "sub_enum": True,
+                "crawl": 2,
+                "info": True,
+                "ip": True,
+                "waf": True,
+                "sec": True
+            }
+        },
+        "quick": {
+            "description": "Quick scan - status, security headers, WAF",
+            "flags": {
+                "sc": True,
+                "sec": True,
+                "waf": True,
+                "cors": True
+            }
+        },
+        "full-scan": {
+            "description": "Comprehensive vulnerability assessment",
+            "flags": {
+                "sub_enum": True,
+                "crawl": 3,
+                "sqli": True,
+                "xss": True,
+                "lfi": True,
+                "cors": True,
+                "hh": True,
+                "sec": True,
+                "cve": True,
+                "info": True
+            }
+        },
+        "bugbounty": {
+            "description": "Bug bounty hunting mode",
+            "flags": {
+                "sub_enum": True,
+                "crawl": 4,
+                "sqli": True,
+                "xss": True,
+                "lfi": True,
+                "cors": True,
+                "hh": True,
+                "info": True,
+                "rate_limit": 2  # Slower to avoid detection
+            }
+        },
+        "stealth": {
+            "description": "Stealth mode - slow, careful scanning",
+            "flags": {
+                "sc": True,
+                "sec": True,
+                "cors": True,
+                "rate_limit": 1  # Very slow
+            }
+        }
+    }
+
+    if profile_name in profiles:
+        profile = profiles[profile_name]
+        print(f"{COLOR_BLUE}[*] Applying profile: {profile_name}{COLOR_RESET}")
+        print(f"{COLOR_BLUE}[*] Description: {profile['description']}{COLOR_RESET}")
+
+        # Apply all flags from profile
+        for flag, value in profile["flags"].items():
+            setattr(args, flag, value)
+
+        return args
+    return args
+
+
+def format_output(data, output_format, output_file=None):
+    """
+    Format scan results in multiple formats (Phase 1 improvement from fullplan.md)
+
+    Supports: txt, json, csv, html, markdown
+    """
+    if output_format == "json":
+        import json
+        output = json.dumps(data, indent=2, default=str)
+
+    elif output_format == "csv":
+        import csv
+        import io
+        output_buffer = io.StringIO()
+
+        if isinstance(data, dict) and 'vulnerabilities' in data:
+            # Vulnerability scan format
+            writer = csv.DictWriter(output_buffer, fieldnames=['timestamp', 'target', 'type', 'severity', 'url', 'parameter', 'payload'])
+            writer.writeheader()
+            for vuln in data.get('vulnerabilities', []):
+                writer.writerow(vuln)
+        else:
+            # Generic format
+            writer = csv.writer(output_buffer)
+            writer.writerow(['Timestamp', 'Data'])
+            writer.writerow([datetime.now().isoformat(), str(data)])
+
+        output = output_buffer.getvalue()
+
+    elif output_format == "html":
+        # Simple HTML report
+        output = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>Greaper Scanner Report</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }}
+        .header {{ background: #2c3e50; color: white; padding: 20px; border-radius: 5px; }}
+        .summary {{ background: white; padding: 20px; margin: 20px 0; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        .critical {{ color: #e74c3c; font-weight: bold; }}
+        .high {{ color: #e67e22; font-weight: bold; }}
+        .medium {{ color: #f39c12; font-weight: bold; }}
+        .finding {{ background: #ecf0f1; padding: 10px; margin: 10px 0; border-left: 4px solid #3498db; }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Greaper Scanner Report</h1>
+        <p>Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+    </div>
+    <div class="summary">
+        <h2>Scan Results</h2>
+        <pre>{json.dumps(data, indent=2, default=str)}</pre>
+    </div>
+</body>
+</html>"""
+
+    elif output_format == "markdown":
+        # Markdown format
+        output = f"""# Greaper Scanner Report
+
+**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+## Scan Results
+
+```json
+{json.dumps(data, indent=2, default=str)}
+```
+"""
+
+    else:  # txt (default)
+        output = str(data)
+
+    # Save to file if specified
+    if output_file:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(output)
+        print(f"{COLOR_GREEN}[+] Results saved to {output_file} ({output_format} format){COLOR_RESET}")
+
+    return output
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Greaper Scanner")
-    
+    parser = argparse.ArgumentParser(description="Greaper Scanner v2.0 - Web Application Security Testing Tool")
+
+    # Core arguments
     parser.add_argument("-u", "--url", help="Single target URL to scan, with 'FUZZ' as the payload insertion point")
     parser.add_argument("-l", "--list", help="File containing multiple URLs to scan, one URL per line")
     parser.add_argument("-s", "--sub-enum", action="store_true", help="Enable subdomain enumeration")
     parser.add_argument("-o", "--output", help="Output file to save results")
     parser.add_argument("--rate-limit", type=int, default=3, help="Rate limit for subdomain requests")
+
+    # Command Profiles (Phase 1 improvement)
+    parser.add_argument("--profile", choices=["recon", "quick", "full-scan", "bugbounty", "stealth"],
+                       help="Use predefined scanning profile")
+
+    # Output Formats (Phase 1 improvement)
+    parser.add_argument("--format", choices=["txt", "json", "csv", "html", "markdown"],
+                       default="txt", help="Output format (default: txt)")
     parser.add_argument("-sqli", action="store_true", help="Enable SQL Injection detection")
     parser.add_argument("-xss", action="store_true", help="Enable Greaper XSS scanning")
     parser.add_argument("-lfi", action="store_true", help="Enable Greaper LFI scanning")
@@ -2657,6 +3050,10 @@ def main():
     parser.add_argument("-waf", action="store_true", help="Detect and analyze Web Application Firewalls")
 
     args = parser.parse_args()
+
+    # Apply profile if specified (Phase 1 improvement)
+    if args.profile:
+        args = apply_scan_profile(args.profile, args)
 
     if args.df:
         if args.url:
@@ -2836,15 +3233,6 @@ def main():
                 urls = [line.strip() for line in f]
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 executor.map(lambda u: check_status_code(u, output_file=args.output), urls)
-
-    elif args.df:
-        if args.url:
-            directory_fuzz(target=args.url, output_file=args.output, payload_file=args.payload_file)
-        elif args.list:
-            with open(args.list, 'r') as f:
-                urls = [line.strip() for line in f]
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                executor.map(lambda u: directory_fuzz(target=u, output_file=args.output, payload_file=args.payload_file), urls)
 
     elif args.waf:
         if args.url:

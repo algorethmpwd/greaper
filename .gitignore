@@ -1,0 +1,68 @@
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Output files
+*.txt
+*.json
+*.csv
+*.html
+!requirements.txt
+!README.md
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Scan results
+results/
+scans/
+reports/
+
+# Wordlists (large files)
+wordlists/*.txt
+!wordlists/README.md
+
+# State files
+.greaper_state*.json
+*.state
+
+# API responses cache
+cache/
+.cache/
+
+#claude stuff
+.claude/
+
+# others
+.mcp.json
