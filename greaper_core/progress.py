@@ -62,6 +62,11 @@ class ScanProgress:
         self.findings.append(finding)
         logger.warning(f"Vulnerability found: {finding}")
 
+    def add_vulnerability(self, vuln_type, severity):
+        """Add a vulnerability finding (alias for add_finding with structured data)"""
+        finding = {"type": vuln_type, "severity": severity}
+        self.add_finding(finding)
+
     def get_stats(self):
         """Get current statistics"""
         elapsed = time.time() - self.start_time

