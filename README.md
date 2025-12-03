@@ -30,7 +30,7 @@
 [![Donate Bitcoin](https://img.shields.io/badge/₿_Bitcoin-F7931A?style=for-the-badge&logo=bitcoin&logoColor=white)](https://www.blockchain.com/explorer/addresses/btc/15MG2nFd9mpx1x2oR2shBfqiNjeo4VWEqk)
 [![Donate Ethereum](https://img.shields.io/badge/Ξ_Ethereum-627EEA?style=for-the-badge&logo=ethereum&logoColor=white)](https://etherscan.io/address/0x8c0b61567ab141f129fa114d0d74951b37290ac1)
 [![Donate USDT](https://img.shields.io/badge/₮_USDT_(TRC20)-26A17B?style=for-the-badge&logo=tether&logoColor=white)](https://tronscan.org/#/address/TKtLZjLbsWa8st3Zr6qwzAewD1x5bdcFGs)
-[![Buy Me A Coffee](https://img.shields.io/badge/Binance_Pay-FCD535?style=for-the-badge&logo=binance&logoColor=black)](https://pay.binance.com/en)
+
 
 **BTC**: `15MG2nFd9mpx1x2oR2shBfqiNjeo4VWEqk` | **ETH**: `0x8c0b61567ab141f129fa114d0d74951b37290ac1` | **USDT**: `TKtLZjLbsWa8st3Zr6qwzAewD1x5bdcFGs`
 
