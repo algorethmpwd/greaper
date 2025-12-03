@@ -12,12 +12,29 @@
 
 **A Modern, Modular Web Application Security Testing Framework**
 
-[![Version](https://img.shields.io/badge/version-2.0-blue.svg)](https://github.com/algorethm/greaper)
+[![Version](https://img.shields.io/badge/version-2.0-blue.svg)](https://github.com/algorethmpwd/greaper)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![Payloads](https://img.shields.io/badge/payloads-2025-red.svg)]()
 
-[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Architecture](#-architecture) • [Contributing](#-contributing)
+[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Architecture](#-architecture) • [Contributing](#-contributing) • [💝 Donate](#-support-this-project)
+
+---
+
+### 💖 Support Development
+
+<div align="center">
+
+**If Greaper helped you find bugs or vulnerabilities, consider supporting development!**
+
+[![Donate Bitcoin](https://img.shields.io/badge/₿_Bitcoin-F7931A?style=for-the-badge&logo=bitcoin&logoColor=white)](https://www.blockchain.com/explorer/addresses/btc/15MG2nFd9mpx1x2oR2shBfqiNjeo4VWEqk)
+[![Donate Ethereum](https://img.shields.io/badge/Ξ_Ethereum-627EEA?style=for-the-badge&logo=ethereum&logoColor=white)](https://etherscan.io/address/0x8c0b61567ab141f129fa114d0d74951b37290ac1)
+[![Donate USDT](https://img.shields.io/badge/₮_USDT_(TRC20)-26A17B?style=for-the-badge&logo=tether&logoColor=white)](https://tronscan.org/#/address/TKtLZjLbsWa8st3Zr6qwzAewD1x5bdcFGs)
+[![Buy Me A Coffee](https://img.shields.io/badge/Binance_Pay-FCD535?style=for-the-badge&logo=binance&logoColor=black)](https://pay.binance.com/en)
+
+**BTC**: `15MG2nFd9mpx1x2oR2shBfqiNjeo4VWEqk` | **ETH**: `0x8c0b61567ab141f129fa114d0d74951b37290ac1` | **USDT**: `TKtLZjLbsWa8st3Zr6qwzAewD1x5bdcFGs`
+
+</div>
 
 </div>
 
@@ -249,7 +266,7 @@ greaper/
 
 ```bash
 # Clone the repository
-git clone https://github.com/algorethm/greaper.git
+git clone https://github.com/algorethmpwd/greaper.git
 cd greaper
 
 # Install dependencies
@@ -713,7 +730,7 @@ Contributions are welcome! Here's how you can help:
 ### Development Setup
 
 ```bash
-git clone https://github.com/algorethm/greaper.git
+git clone https://github.com/algorethmpwd/greaper.git
 cd greaper
 pip3 install -r requirements.txt
 python3 greaper.py --help
@@ -756,8 +773,10 @@ Always obtain proper authorization before testing.
 ## 👨‍💻 Author
 
 **Algorethm**
-- GitHub: [@algorethm](https://github.com/algorethm)
-
+- GitHub: [@algorethmpwd](https://github.com/algorethmpwd)
+- Youtube: [@algorethm_](https://www.youtube.com/@algorethm_)
+- Site: https://algorethmpwd.site
+- Telegram: t.me/algorethm
 ---
 
 ## 🙏 Acknowledgments
@@ -771,17 +790,62 @@ Always obtain proper authorization before testing.
 
 ## 📞 Support
 
-- 🐛 **Report Bugs**: [GitHub Issues](https://github.com/algorethm/greaper/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/algorethm/greaper/discussions)
-- 📧 **Email**: security@greaper.io
-- 🐦 **Twitter**: @greaper_scanner
+- 🐛 **Report Bugs**: [GitHub Issues](https://github.com/algorethmpwd/greaper/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/algorethmpwd/greaper/discussions)
+- 📧 **Email**: mysteryhackeral@gmail.com
+- 🐦 **Twitter**: @algorethm
+
+---
+
+## 💝 Support This Project
+
+If Greaper has helped you in bug bounty hunting, penetration testing, or security research, consider supporting its development!
+
+### Cryptocurrency Donations
+
+<div align="center">
+
+| Currency | Address |
+|----------|---------|
+| **₿ Bitcoin (BTC)** | `15MG2nFd9mpx1x2oR2shBfqiNjeo4VWEqk` |
+| **Ξ Ethereum (ERC20)** | `0x8c0b61567ab141f129fa114d0d74951b37290ac1` |
+| **₮ USDT (TRC20)** | `TKtLZjLbsWa8st3Zr6qwzAewD1x5bdcFGs` |
+
+</div>
+
+### Why Support?
+
+Your donations help:
+- 🔬 **Research new vulnerability techniques** and exploit methods
+- 🛠️ **Develop new scanner modules** (RCE, GraphQL, WebSocket testing)
+- 📚 **Maintain comprehensive documentation** and tutorials
+- 🐛 **Fix bugs and improve stability** for production use
+- 🚀 **Add cutting-edge 2025 payloads** from active bug bounty research
+- ⚡ **Performance optimization** and async improvements
+- 🎓 **Create educational content** and video tutorials
+
+### Other Ways to Support
+
+- ⭐ **Star this repository** to increase visibility
+- 🐦 **Share on Twitter/LinkedIn** with #Greaper #BugBounty
+- 📝 **Write a blog post** about your findings with Greaper
+- 🤝 **Contribute** code, payloads, or bug fixes
+- 💬 **Help others** in GitHub discussions
+- 📢 **Spread the word** in the security community
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by the security community**
+**Made for the security community**
 
 ⭐ Star this repo if you find it useful!
+
+[![GitHub stars](https://img.shields.io/github/stars/algorethm/greaper?style=social)](https://github.com/algorethmpwd/greaper)
+[![GitHub forks](https://img.shields.io/github/forks/algorethmpwd/greaper?style=social)](https://github.com/algorethmpwd/greaper/fork)
+
+### Thank you to all supporters! 🙏
+
+*Every contribution, no matter how small, makes a difference in keeping this project active and improving.*
 
 </div>
