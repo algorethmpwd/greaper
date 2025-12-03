@@ -31,6 +31,7 @@ class IPLookup:
         try:
             ip = socket.gethostbyname(domain)
             obj = IPWhois(ip)
+            results = obj.lookup_rdap()
             asn_info = [
                 {
                     "asn": results.get("asn"),
@@ -171,4 +172,6 @@ class IPLookup:
                 f"\n{Config.COLOR_RED}[-] Error during lookup: {str(e)}{Config.COLOR_RESET}"
             )
             logger.error(f"Error during lookup: {e}")
-            print(f"\n{Config.COLOR_RED}[-] Error during lookup: {str(e)}{Config.COLOR_RESET}")
+            print(
+                f"\n{Config.COLOR_RED}[-] Error during lookup: {str(e)}{Config.COLOR_RESET}"
+            )

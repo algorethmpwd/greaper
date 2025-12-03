@@ -33,44 +33,63 @@ class WebCrawler:
         """Fetch a single page"""
         async with semaphore:
             try:
-                async with session.get(url, timeout=5) as response:
-                    if response.status != 200:
-                        return None
-                    content = await response.text()
-                    return content
+                headers = {"User-Agent": Config.USER_AGENT}
+                async with session.get(
+                    url, timeout=10, ssl=False, headers=headers, allow_redirects=True
+                ) as response:
+                    print(
+                        f"{Config.COLOR_BLUE}[*] Crawling: {url} [{response.status}]{Config.COLOR_RESET}"
+                    )
+                    if response.status in [200, 301, 302]:
+                        content = await response.text()
+                        return content
+                    return None
             except Exception as e:
                 logger.error(f"Error fetching {url}: {e}")
+                print(
+                    f"{Config.COLOR_RED}[-] Error: {url} - {str(e)[:50]}{Config.COLOR_RESET}"
+                )
                 return None
 
+    def extract_links(self, url, content):
+        """Extract links from page content"""
         soup = BeautifulSoup(content, "html.parser")
         links = set()
 
-        # Enhanced tag processing
+        # Extract from all common tags
         tag_attrs = {
             "a": "href",
             "script": "src",
             "link": "href",
             "img": "src",
             "form": "action",
+            "iframe": "src",
+            "embed": "src",
+            "object": "data",
         }
 
         for tag, attr in tag_attrs.items():
             for element in soup.find_all(tag):
                 link = element.get(attr)
-                if link:
-                    full_link = urljoin(url, link)
+                if link and link.strip():
+                    # Skip javascript:, mailto:, tel:, data: URIs
+                    if link.startswith(
+                        ("javascript:", "mailto:", "tel:", "data:", "#")
+                    ):
+                        continue
+
+                    # Convert to absolute URL
+                    full_link = urljoin(url, link.strip())
+
+                    # Only keep links from same domain
                     if (
                         full_link.startswith(("http", "https"))
                         and self.domain in full_link
                     ):
-                        links.add(full_link)
-
-        # Enhanced file type detection
-        interesting_files = r"\.(txt|json|js|zip|tar\.gz|sql|csv|xml|graphql|env|yml|pdf|doc|xls|config|bak|backup|old|temp|tmp|log)$"
-        for link in soup.find_all("a", href=re.compile(interesting_files, re.I)):
-            full_link = urljoin(url, link.get("href"))
-            if full_link.startswith(("http", "https")) and self.domain in full_link:
-                links.add(full_link)
+                        # Remove fragments
+                        full_link = full_link.split("#")[0]
+                        if full_link:
+                            links.add(full_link)
 
         return links
 
@@ -85,36 +104,56 @@ class WebCrawler:
         if not content:
             return
 
-        links = await self.extract_links(url, content)
+        links = self.extract_links(url, content)
 
-        if links:
-            print(f"\n{Config.COLOR_BLUE}[*] URL: {url}{Config.COLOR_RESET}")
+        # Print found links
+        new_links = links - self.crawled_urls
+        if new_links:
             print(
-                f"{Config.COLOR_GREEN}[+] Found {len(links)} links{Config.COLOR_RESET}"
+                f"{Config.COLOR_GREEN}[+] Found {len(new_links)} new links on {url}{Config.COLOR_RESET}"
             )
 
-            # Group links by file type
+            # Group by file extension
             grouped_links = defaultdict(list)
-            for link in links:
-                ext = os.path.splitext(link)[1].lower() or "no_extension"
-                grouped_links[ext].append(link)
+            for link in new_links:
+                ext = os.path.splitext(urlparse(link).path)[1].lower()
+                if ext:
+                    grouped_links[ext].append(link)
+                else:
+                    grouped_links["pages"].append(link)
 
-            for ext, ext_links in grouped_links.items():
-                print(
-                    f"\n{Config.COLOR_PURPLE}[*] {ext.upper()} files:{Config.COLOR_RESET}"
-                )
-                for link in sorted(ext_links):
+            # Display grouped links
+            for ext, ext_links in sorted(grouped_links.items()):
+                if ext == "pages":
+                    print(f"  {Config.COLOR_PURPLE}Pages:{Config.COLOR_RESET}")
+                else:
+                    print(f"  {Config.COLOR_PURPLE}{ext} files:{Config.COLOR_RESET}")
+
+                for link in sorted(ext_links)[:10]:  # Show first 10
                     print(f"    {link}")
+                if len(ext_links) > 10:
+                    print(
+                        f"    {Config.COLOR_BLUE}... and {len(ext_links) - 10} more{Config.COLOR_RESET}"
+                    )
 
-        # Recursively crawl new links
-        if current_depth < self.depth:
+        # Recursively crawl new links at next depth level
+        if current_depth < self.depth and new_links:
             tasks = []
-            for link in links - self.crawled_urls:
+            # Prioritize pages over static resources for crawling
+            pages_to_crawl = [
+                l
+                for l in new_links
+                if not os.path.splitext(urlparse(l).path)[1]
+                or os.path.splitext(urlparse(l).path)[1].lower()
+                in [".html", ".htm", ".php", ".asp", ".aspx", ".jsp"]
+            ]
+
+            for link in list(pages_to_crawl)[:20]:  # Limit to 20 links per depth
                 task = self.crawl_url(session, link, current_depth + 1, semaphore)
                 tasks.append(task)
 
             if tasks:
-                await asyncio.gather(*tasks)
+                await asyncio.gather(*tasks, return_exceptions=True)
 
     async def crawl(self):
         """Execute the crawl"""
@@ -126,7 +165,8 @@ class WebCrawler:
 
         semaphore = asyncio.Semaphore(10)  # Limit concurrent requests
 
-        async with aiohttp.ClientSession() as session:
+        connector = aiohttp.TCPConnector(ssl=False)
+        async with aiohttp.ClientSession(connector=connector) as session:
             await self.crawl_url(session, self.url, 1, semaphore)
 
         # Save results
@@ -145,7 +185,11 @@ class WebCrawler:
         print(
             f"{Config.COLOR_GREEN}[+] Total URLs crawled: {len(self.crawled_urls)}{Config.COLOR_RESET}"
         )
-        print(f"\n{Config.COLOR_BLUE}[-] Time elapsed: {elapsed_time}{Config.COLOR_RESET}")
-        print(f"{Config.COLOR_GREEN}[+] Total URLs crawled: {len(self.crawled_urls)}{Config.COLOR_RESET}")
+        print(
+            f"\n{Config.COLOR_BLUE}[-] Time elapsed: {elapsed_time}{Config.COLOR_RESET}"
+        )
+        print(
+            f"{Config.COLOR_GREEN}[+] Total URLs crawled: {len(self.crawled_urls)}{Config.COLOR_RESET}"
+        )
 
         return self.crawled_urls
