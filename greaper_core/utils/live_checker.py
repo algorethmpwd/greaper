@@ -35,9 +35,13 @@ class LiveURLChecker:
 
         headers = Config.get_headers()
 
+        temp_url = url
+        if '://' in temp_url:
+            temp_url = temp_url.split('://', 1)[1]
+
         for protocol in ["https://", "http://", "ftp://"]:
             try:
-                full_url = protocol + url.strip("/")
+                full_url = protocol + temp_url.rstrip("/")
                 response = requests.get(
                     full_url,
                     timeout=3,

@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 class XSSScanner(BaseScanner):
     """Cross-Site Scripting vulnerability scanner"""
 
-    def __init__(self, target, payload_file, output_file=None, dynamic_payloads=None):
-        super().__init__(target, output_file)
+    def __init__(self, target, payload_file=None, output_file=None, dynamic_payloads=None, progress=None):
+        super().__init__(target, output_file, progress)
         self.payload_file = payload_file
         self.dynamic_payloads = dynamic_payloads
 

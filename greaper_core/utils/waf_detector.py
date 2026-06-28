@@ -37,11 +37,12 @@ class WAFDetector:
                         detected_wafs.append(waf_name)
                         break
 
-            if response.status_code == 403:
-                malicious_url = f"{url}?id=1' OR '1'='1"
+            if response.status_code in [200, 301, 302]:
+                connector = "&" if "?" in url else "?"
+                malicious_url = f"{url}{connector}id=1' OR '1'='1"
                 mal_response = requests.get(malicious_url, headers=headers, verify=False, timeout=10)
 
-                if mal_response.status_code in [403, 406, 501]:
+                if mal_response.status_code in [403, 406, 429, 501]:
                     detected_wafs.append("Generic WAF (Behavioral Detection)")
 
             if detected_wafs:

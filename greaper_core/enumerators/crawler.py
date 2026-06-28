@@ -185,11 +185,5 @@ class WebCrawler:
         print(
             f"{Config.COLOR_GREEN}[+] Total URLs crawled: {len(self.crawled_urls)}{Config.COLOR_RESET}"
         )
-        print(
-            f"\n{Config.COLOR_BLUE}[-] Time elapsed: {elapsed_time}{Config.COLOR_RESET}"
-        )
-        print(
-            f"{Config.COLOR_GREEN}[+] Total URLs crawled: {len(self.crawled_urls)}{Config.COLOR_RESET}"
-        )
 
         return self.crawled_urls

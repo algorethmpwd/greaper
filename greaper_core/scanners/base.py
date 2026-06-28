@@ -16,9 +16,10 @@ logger = logging.getLogger(__name__)
 class BaseScanner:
     """Base class for all vulnerability scanners"""
 
-    def __init__(self, target, output_file=None):
+    def __init__(self, target, output_file=None, progress=None):
         self.target = target
         self.output_file = output_file
+        self.progress = progress
         self.session = self._create_session()
         self.results = []
 
@@ -37,15 +38,23 @@ class BaseScanner:
 
         try:
             if method == "GET":
-                return self.session.get(url, timeout=timeout, **kwargs)
+                response = self.session.get(url, timeout=timeout, **kwargs)
             elif method == "POST":
-                return self.session.post(url, data=data, timeout=timeout, **kwargs)
+                response = self.session.post(url, data=data, timeout=timeout, **kwargs)
             elif method == "PUT":
-                return self.session.put(url, data=data, timeout=timeout, **kwargs)
+                response = self.session.put(url, data=data, timeout=timeout, **kwargs)
+            
+            if self.progress:
+                self.progress.add_request(success=True)
+            return response
         except requests.Timeout:
+            if self.progress:
+                self.progress.add_request(success=False)
             logger.warning(f"Request timed out, retrying: {url}")
             raise
         except requests.RequestException as e:
+            if self.progress:
+                self.progress.add_request(success=False)
             logger.error(f"Request error: {str(e)}")
             raise
 

@@ -18,9 +18,9 @@ class XXEScanner(BaseScanner):
     """Detect XXE vulnerabilities"""
 
     def __init__(
-        self, target, payload_file=None, output_file=None, dynamic_payloads=None
+        self, target, payload_file=None, output_file=None, dynamic_payloads=None, progress=None
     ):
-        super().__init__(target, output_file)
+        super().__init__(target, output_file, progress)
         self.payload_file = payload_file
         self.dynamic_payloads = dynamic_payloads
         self.findings = []
@@ -251,12 +251,12 @@ class XXEScanner(BaseScanner):
                     "User-Agent": Config.USER_AGENT,
                 }
 
-                response = self.session.post(
+                response = self.make_request(
                     self.target,
+                    method="POST",
                     data=payload,
                     headers=headers,
                     timeout=Config.DEFAULT_TIMEOUT,
-                    verify=False,
                     allow_redirects=True,
                 )
 
@@ -305,13 +305,13 @@ class XXEScanner(BaseScanner):
         """Save findings to file"""
         if self.output_file and self.findings:
             with open(self.output_file, "w") as f:
-                f.write(f"XXE Scan Results for {self.target}\\n")
-                f.write("=" * 50 + "\\n\\n")
+                f.write(f"XXE Scan Results for {self.target}\n")
+                f.write("=" * 50 + "\n\n")
                 for finding in self.findings:
-                    f.write(f"Severity: {finding['severity']}\\n")
-                    f.write(f"Indicators: {', '.join(finding['indicators'])}\\n")
-                    f.write(f"Payload Preview: {finding['payload']}\\n")
-                    f.write("-" * 50 + "\\n")
+                    f.write(f"Severity: {finding['severity']}\n")
+                    f.write(f"Indicators: {', '.join(finding['indicators'])}\n")
+                    f.write(f"Payload Preview: {finding['payload']}\n")
+                    f.write("-" * 50 + "\n")
             print(
                 f"{Config.COLOR_GREEN}[+] Results saved to {self.output_file}{Config.COLOR_RESET}"
             )

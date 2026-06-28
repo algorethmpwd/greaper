@@ -118,6 +118,5 @@ class CORSScanner(BaseScanner):
             print(
                 f"{Config.COLOR_RED}[-] No CORS Misconfiguration vulnerabilities found{Config.COLOR_RESET}"
             )
-            print(f"{Config.COLOR_RED}[-] No CORS Misconfiguration vulnerabilities found{Config.COLOR_RESET}")
         else:
             self.save_results()

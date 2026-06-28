@@ -19,9 +19,9 @@ class SQLiScanner(BaseScanner):
     """SQL Injection vulnerability scanner"""
 
     def __init__(
-        self, target, payload_file=None, output_file=None, dynamic_payloads=None
+        self, target, payload_file=None, output_file=None, dynamic_payloads=None, progress=None
     ):
-        super().__init__(target, output_file)
+        super().__init__(target, output_file, progress)
         self.payload_file = payload_file
         self.dynamic_payloads = dynamic_payloads
         self.sql_error_patterns = [
@@ -241,9 +241,6 @@ class SQLiScanner(BaseScanner):
         if found_vulnerabilities:
             self.save_results()
         else:
-            print(
-                f"\n{Config.COLOR_RED}[-] No SQLi vulnerabilities found.{Config.COLOR_RESET}"
-            )
             print(
                 f"\n{Config.COLOR_RED}[-] No SQLi vulnerabilities found.{Config.COLOR_RESET}"
             )

@@ -104,6 +104,5 @@ class OutputFormatter:
             print(
                 f"{Config.COLOR_GREEN}[+] Results saved to {output_file} ({output_format} format){Config.COLOR_RESET}"
             )
-            print(f"{Config.COLOR_GREEN}[+] Results saved to {output_file} ({output_format} format){Config.COLOR_RESET}")
 
         return output

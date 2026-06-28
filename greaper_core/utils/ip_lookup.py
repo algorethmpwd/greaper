@@ -171,7 +171,3 @@ class IPLookup:
             print(
                 f"\n{Config.COLOR_RED}[-] Error during lookup: {str(e)}{Config.COLOR_RESET}"
             )
-            logger.error(f"Error during lookup: {e}")
-            print(
-                f"\n{Config.COLOR_RED}[-] Error during lookup: {str(e)}{Config.COLOR_RESET}"
-            )

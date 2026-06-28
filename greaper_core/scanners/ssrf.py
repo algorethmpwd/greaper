@@ -19,9 +19,9 @@ class SSRFScanner(BaseScanner):
     """Detect SSRF vulnerabilities"""
 
     def __init__(
-        self, target, payload_file=None, output_file=None, dynamic_payloads=None
+        self, target, payload_file=None, output_file=None, dynamic_payloads=None, progress=None
     ):
-        super().__init__(target, output_file)
+        super().__init__(target, output_file, progress)
         self.payload_file = payload_file
         self.dynamic_payloads = dynamic_payloads
         self.findings = []
@@ -288,13 +288,13 @@ class SSRFScanner(BaseScanner):
         """Save findings to file"""
         if self.output_file and self.findings:
             with open(self.output_file, "w") as f:
-                f.write(f"SSRF Scan Results for {self.target}\\n")
-                f.write("=" * 50 + "\\n\\n")
+                f.write(f"SSRF Scan Results for {self.target}\n")
+                f.write("=" * 50 + "\n\n")
                 for finding in self.findings:
-                    f.write(f"Parameter: {finding['parameter']}\\n")
-                    f.write(f"Payload: {finding['payload']}\\n")
-                    f.write(f"Indicators: {', '.join(finding['indicators'])}\\n")
-                    f.write(f"URL: {finding['url']}\\n\\n")
+                    f.write(f"Parameter: {finding['parameter']}\n")
+                    f.write(f"Payload: {finding['payload']}\n")
+                    f.write(f"Indicators: {', '.join(finding['indicators'])}\n")
+                    f.write(f"URL: {finding['url']}\n\n")
             print(
                 f"{Config.COLOR_GREEN}[+] Results saved to {self.output_file}{Config.COLOR_RESET}"
             )

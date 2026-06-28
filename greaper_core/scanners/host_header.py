@@ -83,6 +83,5 @@ class HostHeaderScanner(BaseScanner):
             print(
                 f"{Config.COLOR_RED}[-] No Host Header Injection vulnerabilities found{Config.COLOR_RESET}"
             )
-            print(f"{Config.COLOR_RED}[-] No Host Header Injection vulnerabilities found{Config.COLOR_RESET}")
         else:
             self.save_results()

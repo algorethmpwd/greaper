@@ -24,7 +24,11 @@ class SubdomainEnumerator:
 
     def _parse_domain(self, url):
         """Parse domain from URL"""
-        domain = url.split('://')[-1].strip('/')
+        from urllib.parse import urlparse
+        temp_url = url
+        if '://' not in temp_url:
+            temp_url = 'http://' + temp_url
+        domain = urlparse(temp_url).netloc.split(':')[0]
         if '*' not in domain:
             return domain, None
         parts = domain.split('.')

@@ -45,12 +45,10 @@ class DirectoryFuzzer:
             try:
                 response = requests.get(url, timeout=5, allow_redirects=False)
                 status_code = response.status_code
-                color = Config.color_status_code(status_code)
-
-                result = f"{url} [Status {status_code}]"
-                self.results.append(result)
-
                 if status_code != 404:
+                    color = Config.color_status_code(status_code)
+                    result = f"{url} [Status {status_code}]"
+                    self.results.append(result)
                     print(f"{color}{result}{Config.COLOR_RESET}")
 
             except requests.RequestException as e:

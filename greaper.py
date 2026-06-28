@@ -134,132 +134,299 @@ def apply_scan_profile(profile_name, args):
 
 
 # Scanner runners
-def run_sqli_scanner(url, args):
+def run_sqli_scanner(url, args, progress=None):
     scanner = SQLiScanner(
-        target=url, payload_file=args.payload_file, output_file=args.output
+        target=url, payload_file=args.payload_file, output_file=None, progress=progress
     )
     scanner.scan()
+    findings = []
+    for result in scanner.results:
+        payload = ""
+        vuln_url = url
+        if " With payload: " in result:
+            parts = result.split(" With payload: ")
+            payload = parts[1]
+            vuln_url = parts[0].replace("[+] Potential SQLi found on ", "").strip()
+        finding = {
+            "timestamp": datetime.now().isoformat(),
+            "target": url,
+            "type": "SQL Injection",
+            "severity": "high",
+            "url": vuln_url,
+            "parameter": "FUZZ" if "FUZZ" in url else "",
+            "payload": payload
+        }
+        findings.append(finding)
+        if progress:
+            progress.add_finding(finding)
+    return findings
 
 
-def run_xss_scanner(url, args):
-    if not args.payload_file:
-        print(
-            f"{Config.COLOR_RED}[-] XSS scanner requires payload file (-p){Config.COLOR_RESET}"
-        )
-        return
+def run_xss_scanner(url, args, progress=None):
     scanner = XSSScanner(
-        target=url, payload_file=args.payload_file, output_file=args.output
+        target=url, payload_file=args.payload_file, output_file=None, progress=progress
     )
     scanner.scan()
+    findings = []
+    for result in scanner.results:
+        payload = ""
+        vuln_url = url
+        if " With payload: " in result:
+            parts = result.split(" With payload: ")
+            payload = parts[1]
+            vuln_url = parts[0].replace("[+] Potential XSS found on ", "").strip()
+        finding = {
+            "timestamp": datetime.now().isoformat(),
+            "target": url,
+            "type": "Cross-Site Scripting",
+            "severity": "high",
+            "url": vuln_url,
+            "parameter": "FUZZ" if "FUZZ" in url else "",
+            "payload": payload
+        }
+        findings.append(finding)
+        if progress:
+            progress.add_finding(finding)
+    return findings
 
 
-def run_lfi_scanner(url, args):
-    if not args.payload_file:
-        print(
-            f"{Config.COLOR_RED}[-] LFI scanner requires payload file (-p){Config.COLOR_RESET}"
-        )
-        return
+def run_lfi_scanner(url, args, progress=None):
     scanner = LFIScanner(
-        target=url, payload_file=args.payload_file, output_file=args.output
+        target=url, payload_file=args.payload_file, output_file=None, progress=progress
     )
     scanner.scan()
+    findings = []
+    for result in scanner.results:
+        payload = ""
+        vuln_url = url
+        if " With file: " in result:
+            parts = result.split(" With file: ")
+            payload = parts[1]
+            vuln_url = parts[0].replace("[+] Potential LFI found on ", "").strip()
+        finding = {
+            "timestamp": datetime.now().isoformat(),
+            "target": url,
+            "type": "Local File Inclusion",
+            "severity": "high",
+            "url": vuln_url,
+            "parameter": "FUZZ" if "FUZZ" in url else "",
+            "payload": payload
+        }
+        findings.append(finding)
+        if progress:
+            progress.add_finding(finding)
+    return findings
 
 
-def run_cors_scanner(url, args):
-    scanner = CORSScanner(target=url, output_file=args.output)
+def run_cors_scanner(url, args, progress=None):
+    scanner = CORSScanner(target=url, output_file=None, progress=progress)
     scanner.scan()
+    findings = []
+    for result in scanner.results:
+        origin = ""
+        for line in result.splitlines():
+            if "Testing Origin:" in line:
+                origin = line.split("Testing Origin:")[1].strip()
+        finding = {
+            "timestamp": datetime.now().isoformat(),
+            "target": url,
+            "type": "CORS Misconfiguration",
+            "severity": "medium",
+            "url": url,
+            "parameter": "Origin",
+            "payload": origin
+        }
+        findings.append(finding)
+        if progress:
+            progress.add_finding(finding)
+    return findings
 
 
-def run_host_header_scanner(url, args):
-    scanner = HostHeaderScanner(target=url, output_file=args.output)
+def run_host_header_scanner(url, args, progress=None):
+    scanner = HostHeaderScanner(target=url, output_file=None, progress=progress)
     scanner.scan()
+    findings = []
+    for result in scanner.results:
+        finding = {
+            "timestamp": datetime.now().isoformat(),
+            "target": url,
+            "type": "Host Header Injection",
+            "severity": "medium",
+            "url": url,
+            "parameter": "Host",
+            "payload": "evil.com"
+        }
+        findings.append(finding)
+        if progress:
+            progress.add_finding(finding)
+    return findings
 
 
-def run_ssrf_scanner(url, args):
+def run_ssrf_scanner(url, args, progress=None):
     scanner = SSRFScanner(
-        target=url, payload_file=args.payload_file, output_file=args.output
+        target=url, payload_file=args.payload_file, output_file=None, progress=progress
     )
     scanner.scan()
+    findings = []
+    for finding in scanner.findings:
+        f = {
+            "timestamp": datetime.now().isoformat(),
+            "target": url,
+            "type": "SSRF",
+            "severity": finding.get("severity", "high"),
+            "url": finding.get("url", url),
+            "parameter": finding.get("parameter", ""),
+            "payload": finding.get("payload", "")
+        }
+        findings.append(f)
+        if progress:
+            progress.add_finding(f)
+    return findings
 
 
-def run_xxe_scanner(url, args):
+def run_xxe_scanner(url, args, progress=None):
     scanner = XXEScanner(
-        target=url, payload_file=args.payload_file, output_file=args.output
+        target=url, payload_file=args.payload_file, output_file=None, progress=progress
     )
     scanner.scan()
+    findings = []
+    for finding in scanner.findings:
+        f = {
+            "timestamp": datetime.now().isoformat(),
+            "target": url,
+            "type": "XXE",
+            "severity": finding.get("severity", "critical"),
+            "url": finding.get("url", url),
+            "parameter": "",
+            "payload": finding.get("payload", "")
+        }
+        findings.append(f)
+        if progress:
+            progress.add_finding(f)
+    return findings
 
 
 def run_subdomain_enum(url, args):
     enumerator = SubdomainEnumerator(
-        url=url, output_file=args.output, rate_limit=args.rate_limit
+        url=url, output_file=None, rate_limit=args.rate_limit
     )
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(enumerator.enumerate())
+        subdomains = loop.run_until_complete(enumerator.enumerate())
+        return subdomains
     finally:
         loop.close()
 
 
 def run_crawler(url, args):
-    crawler = WebCrawler(url=url, depth=args.crawl, output_file=args.output)
+    crawler = WebCrawler(url=url, depth=args.crawl, output_file=None)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(crawler.crawl())
+        urls = loop.run_until_complete(crawler.crawl())
+        return list(urls)
     finally:
         loop.close()
 
 
-def run_js_scanner(url, args):
-    scanner = JSScanner(target=url, output_file=args.output)
+def run_js_scanner(url, args, progress=None):
+    scanner = JSScanner(target=url, output_file=None)
     scanner.scan()
+    return []
 
 
-def run_cve_scanner(url, args):
-    scanner = CVEScanner(url=url, output_file=args.output)
+def run_cve_scanner(url, args, progress=None):
+    scanner = CVEScanner(url=url, output_file=None)
     scanner.scan()
+    findings = []
+    for result in scanner.results:
+        finding = {
+            "timestamp": datetime.now().isoformat(),
+            "target": url,
+            "type": "CVE / Vulnerability Fingerprint",
+            "severity": "medium",
+            "url": url,
+            "parameter": "",
+            "payload": result
+        }
+        findings.append(finding)
+        if progress:
+            progress.add_finding(finding)
+    return findings
 
 
-def run_directory_fuzzer(url, args):
+def run_directory_fuzzer(url, args, progress=None):
     fuzzer = DirectoryFuzzer(
-        target=url, payload_file=args.payload_file, output_file=args.output
+        target=url, payload_file=args.payload_file, output_file=None
     )
     fuzzer.fuzz()
+    findings = []
+    for result in fuzzer.results:
+        finding = {
+            "timestamp": datetime.now().isoformat(),
+            "target": url,
+            "type": "Directory Discovery",
+            "severity": "info",
+            "url": result.split(" [Status")[0],
+            "parameter": "",
+            "payload": result
+        }
+        findings.append(finding)
+        if progress:
+            progress.add_finding(finding)
+    return findings
 
 
-def run_content_length(url, args, checker):
+def run_content_length(url, args, checker, progress=None):
     checker.check(url)
+    return []
 
 
-def run_live_checker(url, args, checker):
+def run_live_checker(url, args, checker, progress=None):
     checker.check(url)
+    return []
 
 
-def run_security_headers(url, args):
-    checker = SecurityHeadersChecker(url=url, output_file=args.output)
+def run_security_headers(url, args, progress=None):
+    checker = SecurityHeadersChecker(url=url, output_file=None)
     checker.check()
+    return []
 
 
-def run_ip_lookup(url, args):
-    lookup = IPLookup(target=url, output_file=args.output)
+def run_ip_lookup(url, args, progress=None):
+    lookup = IPLookup(target=url, output_file=None)
     lookup.lookup()
+    return []
 
 
-def run_status_checker(url, args):
-    checker = StatusChecker(output_file=args.output)
+def run_status_checker(url, args, progress=None):
+    checker = StatusChecker(output_file=None)
     checker.check(url)
+    return []
 
 
-def run_waf_detector(url, args):
+def run_waf_detector(url, args, progress=None):
     detector = WAFDetector()
     detector.detect(url)
+    return []
 
 
-def process_urls(urls, scanner_func, args):
-    """Process multiple URLs with a scanner function"""
+def process_urls(urls, scanner_func, args, progress=None):
+    """Process multiple URLs with a scanner function concurrently and return findings"""
+    findings = []
+    from datetime import datetime
+    import concurrent.futures
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        executor.map(lambda u: scanner_func(u, args), urls)
+        futures = [executor.submit(scanner_func, u, args, progress) for u in urls]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                res = future.result()
+                if res:
+                    findings.extend(res)
+            except Exception as e:
+                logger.error(f"Error in process_urls scanner execution: {e}")
+    return findings
 
 
 def main():
@@ -361,98 +528,247 @@ def main():
         )
         return
 
-    # Execute scans based on flags
+    # Initialize ScanProgress and findings list
+    progress = ScanProgress(total_targets=len(urls))
+    all_findings = []
+    scanned_any = False
+
+    # Execute subdomain enumeration first
     if args.sub_enum:
+        scanned_any = True
+        discovered_subdomains = []
         for url in urls:
-            run_subdomain_enum(url, args)
+            subs = run_subdomain_enum(url, args)
+            if subs:
+                discovered_subdomains.extend(subs)
+            progress.update_target()
+        
+        # Convert subdomain hosts to full probe URLs (prefer HTTPS, fallback to HTTP)
+        subdomain_urls = []
+        for sub in set(discovered_subdomains):
+            sub = sub.strip()
+            if sub:
+                subdomain_urls.append(f"https://{sub}")
+                subdomain_urls.append(f"http://{sub}")
+        
+        if subdomain_urls:
+            print(f"\n{Config.COLOR_BLUE}[*] Probing discovered subdomains to find live targets...{Config.COLOR_RESET}")
+            checker = LiveURLChecker(output_file=None)
+            for sub_url in subdomain_urls:
+                checker.check(sub_url)
+            
+            if checker.results:
+                print(f"\n{Config.COLOR_GREEN}[+] Added {len(checker.results)} live subdomains as targets for subsequent scans.{Config.COLOR_RESET}")
+                for live_sub in checker.results:
+                    if live_sub not in urls:
+                        urls.append(live_sub)
 
-    elif args.crawl:
+    # Execute crawler next to discover additional paths
+    if args.crawl:
+        scanned_any = True
+        crawled_paths = []
         for url in urls:
-            run_crawler(url, args)
+            found_urls = run_crawler(url, args)
+            if found_urls:
+                crawled_paths.extend(found_urls)
+            progress.update_target()
+        
+        # Add crawled paths to targets so they get scanned
+        for crawled_url in set(crawled_paths):
+            if crawled_url not in urls:
+                urls.append(crawled_url)
 
-    elif args.info:
-        for url in urls:
-            run_js_scanner(url, args)
+    # Update progress target count dynamically
+    progress.total_targets = len(urls)
 
-    elif args.cve:
+    # Run JS scanner (Information gathering)
+    if args.info:
+        scanned_any = True
         for url in urls:
-            run_cve_scanner(url, args)
+            run_js_scanner(url, args, progress)
+            progress.update_target()
 
-    elif args.df:
-        for url in urls:
-            run_directory_fuzzer(url, args)
+    # Run CVE scanner
+    if args.cve:
+        scanned_any = True
+        if len(urls) == 1:
+            res = run_cve_scanner(urls[0], args, progress)
+            all_findings.extend(res)
+            progress.update_target()
+        else:
+            res = process_urls(urls, run_cve_scanner, args, progress)
+            all_findings.extend(res)
+            for _ in urls:
+                progress.update_target()
 
-    elif args.sec:
-        for url in urls:
-            run_security_headers(url, args)
+    # Run Directory Fuzzer
+    if args.df:
+        scanned_any = True
+        if len(urls) == 1:
+            res = run_directory_fuzzer(urls[0], args, progress)
+            all_findings.extend(res)
+            progress.update_target()
+        else:
+            res = process_urls(urls, run_directory_fuzzer, args, progress)
+            all_findings.extend(res)
+            for _ in urls:
+                progress.update_target()
 
-    elif args.ip:
+    # Run Security Headers Checker
+    if args.sec:
+        scanned_any = True
         for url in urls:
-            run_ip_lookup(url, args)
+            run_security_headers(url, args, progress)
+            progress.update_target()
 
-    elif args.cl:
-        checker = ContentLengthChecker(output_file=args.output)
+    # Run IP Lookup
+    if args.ip:
+        scanned_any = True
         for url in urls:
-            run_content_length(url, args, checker)
+            run_ip_lookup(url, args, progress)
+            progress.update_target()
+
+    # Run Content Length Checker
+    if args.cl:
+        scanned_any = True
+        checker = ContentLengthChecker(output_file=None)
+        for url in urls:
+            run_content_length(url, args, checker, progress)
+            progress.update_target()
         checker.print_summary()
 
-    elif args.lv:
-        checker = LiveURLChecker(output_file=args.output)
+    # Run Live URL Checker
+    if args.lv:
+        scanned_any = True
+        checker = LiveURLChecker(output_file=None)
         for url in urls:
-            run_live_checker(url, args, checker)
-        checker.save_results()
+            run_live_checker(url, args, checker, progress)
+            progress.update_target()
         checker.print_summary()
 
-    elif args.sqli:
+    # Run SQLi scanner
+    if args.sqli:
+        scanned_any = True
         if len(urls) == 1:
-            run_sqli_scanner(urls[0], args)
+            res = run_sqli_scanner(urls[0], args, progress)
+            all_findings.extend(res)
+            progress.update_target()
         else:
-            process_urls(urls, run_sqli_scanner, args)
+            res = process_urls(urls, run_sqli_scanner, args, progress)
+            all_findings.extend(res)
+            for _ in urls:
+                progress.update_target()
 
-    elif args.xss:
+    # Run XSS scanner
+    if args.xss:
+        scanned_any = True
         if len(urls) == 1:
-            run_xss_scanner(urls[0], args)
+            res = run_xss_scanner(urls[0], args, progress)
+            all_findings.extend(res)
+            progress.update_target()
         else:
-            process_urls(urls, run_xss_scanner, args)
+            res = process_urls(urls, run_xss_scanner, args, progress)
+            all_findings.extend(res)
+            for _ in urls:
+                progress.update_target()
 
-    elif args.lfi:
+    # Run LFI scanner
+    if args.lfi:
+        scanned_any = True
         if len(urls) == 1:
-            run_lfi_scanner(urls[0], args)
+            res = run_lfi_scanner(urls[0], args, progress)
+            all_findings.extend(res)
+            progress.update_target()
         else:
-            process_urls(urls, run_lfi_scanner, args)
+            res = process_urls(urls, run_lfi_scanner, args, progress)
+            all_findings.extend(res)
+            for _ in urls:
+                progress.update_target()
 
-    elif args.cors:
+    # Run CORS scanner
+    if args.cors:
+        scanned_any = True
         if len(urls) == 1:
-            run_cors_scanner(urls[0], args)
+            res = run_cors_scanner(urls[0], args, progress)
+            all_findings.extend(res)
+            progress.update_target()
         else:
-            process_urls(urls, run_cors_scanner, args)
+            res = process_urls(urls, run_cors_scanner, args, progress)
+            all_findings.extend(res)
+            for _ in urls:
+                progress.update_target()
 
-    elif args.hh:
+    # Run Host Header scanner
+    if args.hh:
+        scanned_any = True
         if len(urls) == 1:
-            run_host_header_scanner(urls[0], args)
+            res = run_host_header_scanner(urls[0], args, progress)
+            all_findings.extend(res)
+            progress.update_target()
         else:
-            process_urls(urls, run_host_header_scanner, args)
+            res = process_urls(urls, run_host_header_scanner, args, progress)
+            all_findings.extend(res)
+            for _ in urls:
+                progress.update_target()
 
-    elif args.ssrf:
+    # Run SSRF scanner
+    if args.ssrf:
+        scanned_any = True
         if len(urls) == 1:
-            run_ssrf_scanner(urls[0], args)
+            res = run_ssrf_scanner(urls[0], args, progress)
+            all_findings.extend(res)
+            progress.update_target()
         else:
-            process_urls(urls, run_ssrf_scanner, args)
+            res = process_urls(urls, run_ssrf_scanner, args, progress)
+            all_findings.extend(res)
+            for _ in urls:
+                progress.update_target()
 
-    elif args.xxe:
+    # Run XXE scanner
+    if args.xxe:
+        scanned_any = True
         if len(urls) == 1:
-            run_xxe_scanner(urls[0], args)
+            res = run_xxe_scanner(urls[0], args, progress)
+            all_findings.extend(res)
+            progress.update_target()
         else:
-            process_urls(urls, run_xxe_scanner, args)
+            res = process_urls(urls, run_xxe_scanner, args, progress)
+            all_findings.extend(res)
+            for _ in urls:
+                progress.update_target()
 
-    elif args.sc:
+    # Run HTTP status code checker
+    if args.sc:
+        scanned_any = True
         for url in urls:
-            run_status_checker(url, args)
+            run_status_checker(url, args, progress)
+            progress.update_target()
 
-    elif args.waf:
+    # Run WAF Detector
+    if args.waf:
+        scanned_any = True
         for url in urls:
-            run_waf_detector(url, args)
+            run_waf_detector(url, args, progress)
+            progress.update_target()
 
+    # Final stats print and report output formatting
+    if scanned_any:
+        progress.print_summary()
+
+        if args.output:
+            report_data = {
+                "scan_info": {
+                    "target": args.url or args.list,
+                    "timestamp": datetime.now().isoformat(),
+                    "total_targets_scanned": len(urls),
+                    "total_requests": progress.total_requests,
+                    "successful_requests": progress.successful_requests,
+                    "failed_requests": progress.failed_requests,
+                    "vulnerabilities_found": len(all_findings),
+                },
+                "vulnerabilities": all_findings,
+            }
+            OutputFormatter.format(report_data, args.format, args.output)
     else:
         print(
             f"{Config.COLOR_ORANGE}[-] Please specify a scan type{Config.COLOR_RESET}"
